@@ -59,7 +59,7 @@ const WorkSpace = () => {
               <SelectValue placeholder="Select workspace" />
             </span>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" align="start" sideOffset={5}>
             {workspaces.map((ws) => (
               <SelectItem key={ws.id} value={ws.id}>
                 {ws.name}
