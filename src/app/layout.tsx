@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
+import { QueryProvider } from "@/components/query-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+
+const poppins = Poppins({
+  subsets:["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700" , "800", "900"],
+})
 
 export const metadata: Metadata = {
-  title: "Httply",
-  description: "Httply Application",
+  title: "PostBoy",
+  description: "A modern API client for developers.",
 };
 
 export default function RootLayout({
@@ -24,20 +23,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en" suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-         <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-        {children}
-        </ThemeProvider>
-        </body>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${poppins.className} antialiased`}
+      >
+        <QueryProvider>
+          <ThemeProvider
+           attribute={"class"} 
+           defaultTheme="dark"
+            enableSystem>
+              <Toaster />
+              {children}
+          </ThemeProvider>
+        </QueryProvider>
+
+      </body>
     </html>
   );
 }
