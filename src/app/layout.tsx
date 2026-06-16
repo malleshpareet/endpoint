@@ -4,12 +4,13 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/query-provider";
+import { HotkeysProviders } from "@/components/hot-key-provider";
 
 
 
 const poppins = Poppins({
-  subsets:["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700" , "800", "900"],
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 })
 
 export const metadata: Metadata = {
@@ -29,11 +30,13 @@ export default function RootLayout({
       >
         <QueryProvider>
           <ThemeProvider
-           attribute={"class"} 
-           defaultTheme="dark"
+            attribute={"class"}
+            defaultTheme="dark"
             enableSystem>
+            <HotkeysProviders>
               <Toaster />
               {children}
+            </HotkeysProviders>
           </ThemeProvider>
         </QueryProvider>
 
