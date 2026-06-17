@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import SaveRequestToCollectionModal from "@/modules/collections/components/add-request-modal";
 import { REST_METHOD } from "@prisma/client";
 
-import { Unplug } from "lucide-react";
+import Image from "next/image";
 import { useSaveRequest } from "../hooks/request";
 import TabBar from "./tab-bar";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -94,7 +94,7 @@ export default function PlaygroundPage() {
     return (
       <div className="flex space-y-4 flex-col h-full items-center justify-center">
         <div className="flex flex-col justify-center items-center h-40 w-40 border rounded-full bg-zinc-900">
-          <Unplug size={80} className='text-indigo-400' />
+          <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={80} height={80} />
         </div>
 
 

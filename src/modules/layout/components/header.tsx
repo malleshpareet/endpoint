@@ -1,5 +1,6 @@
 "use client"
-import { Unplug, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
+import Image from 'next/image'
 
 import UserButton from '@/modules/authentication/components/user-button'
 import { UserProps } from '../types'
@@ -19,7 +20,7 @@ const Header = ({ user }: Props) => {
   return (
     <header className='grid grid-cols-5 grid-rows-1 gap-2 overflow-x-auto overflow-hidden p-2 border'>
       <div className='col-span-2 flex items-center justify-between space-x-2 hover:cursor-pointer hover:opacity-80 ml-4'>
-        <Unplug size={28} className='text-indigo-400' />
+        <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={64} height={64} />
       </div>
 
       <div className='col-span-1 flex items-center justify-between space-x-2'>
