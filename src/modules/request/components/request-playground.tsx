@@ -18,7 +18,7 @@ export default function PlaygroundPage() {
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
-  const {mutateAsync, isPending} = useSaveRequest(activeTab?.requestId!);
+  const { mutateAsync, isPending } = useSaveRequest(activeTab?.requestId!);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
 
@@ -38,38 +38,41 @@ export default function PlaygroundPage() {
     };
   };
 
- useHotkeys(
-  "ctrl+s, meta+s",
-  async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  useHotkeys(
+    "ctrl+s, meta+s",
+    async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (!activeTab) {
-      toast.error("No active request to save");
-      return;
-    }
-
-    if (activeTab.collectionId) {
-  
-      try {
-        await mutateAsync({
-          url: activeTab.url || "https://echo.hoppscotch.io",
-          method: activeTab.method as REST_METHOD,
-          name: activeTab.title || "Untitled Request",
-        });
-        toast.success("Request updated");
-      } catch (err) {
-        console.error("Failed to update request:", err);
-        toast.error("Failed to update request");
+      if (!activeTab) {
+        toast.error("No active request to save");
+        return;
       }
-    } else {
-     
-      setShowSaveModal(true);
-    }
-  },
-  { preventDefault: true, enableOnFormTags: true },
-  [activeTab]
-);
+
+      if (activeTab.collectionId) {
+
+        try {
+          await mutateAsync({
+            url: activeTab.url || "https://echo.hoppscotch.io",
+            method: activeTab.method as REST_METHOD,
+            name: activeTab.title || "Untitled Request",
+            body: activeTab.body,
+            headers: activeTab.headers,
+            parameters: activeTab.parameters,
+          });
+          toast.success("Request updated");
+        } catch (err) {
+          console.error("Failed to update request:", err);
+          toast.error("Failed to update request");
+        }
+      } else {
+
+        setShowSaveModal(true);
+      }
+    },
+    { preventDefault: true, enableOnFormTags: true },
+    [activeTab]
+  );
 
 
   useHotkeys(
@@ -84,7 +87,7 @@ export default function PlaygroundPage() {
       preventDefault: true,
       enableOnFormTags: true,
     },
-    []
+    [activeTab]
   );
 
   if (!activeTab) {
@@ -93,11 +96,11 @@ export default function PlaygroundPage() {
         <div className="flex flex-col justify-center items-center h-40 w-40 border rounded-full bg-zinc-900">
           <Unplug size={80} className='text-indigo-400' />
         </div>
-       
+
 
         <div className="bg-zinc-900 p-4 rounded-lg space-y-2">
           <div className="flex justify-between items-center gap-8">
-            <kbd className="px-2 py-1 bg-zinc-800 text-indigo-400 text-sm rounded border">Ctrl+Shift+N</kbd>
+            <kbd className="px-2 py-1 bg-zinc-800 text-indigo-400 text-sm rounded border">Ctrl+G</kbd>
             <span className="text-zinc-400 font-semibold">New Request</span>
           </div>
           <div className="flex justify-between items-center gap-8">

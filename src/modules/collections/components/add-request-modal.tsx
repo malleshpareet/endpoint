@@ -37,7 +37,7 @@ const SaveRequestToCollectionModal = ({
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>(collectionId || "");
   const [searchTerm, setSearchTerm] = useState("");
 
-  
+
   const { selectedWorkspace } = useWorkspaceStore();
   const { data: collections, isLoading, isError } = useCollections(selectedWorkspace?.id!);
   const { mutateAsync, isPending } = useAddRequestToCollection(selectedCollectionId);
@@ -54,14 +54,14 @@ const SaveRequestToCollectionModal = ({
 
   useEffect(() => {
     if (!isModalOpen) return;
-    if (collectionId) return; 
+    if (collectionId) return;
     if (!selectedCollectionId && collections && collections.length > 0) {
       setSelectedCollectionId(collections[0].id);
     }
   }, [isModalOpen, collections, collectionId, selectedCollectionId]);
 
 
-  
+
 
   const requestColorMap: Record<REST_METHOD, string> = {
     [REST_METHOD.GET]: "text-green-500",
@@ -69,7 +69,7 @@ const SaveRequestToCollectionModal = ({
     [REST_METHOD.PUT]: "text-yellow-500",
     [REST_METHOD.DELETE]: "text-red-500",
     [REST_METHOD.PATCH]: "text-orange-500",
- 
+
   };
 
 
@@ -89,14 +89,14 @@ const SaveRequestToCollectionModal = ({
       toast.error("Please select a collection");
       return;
     }
-    
+
     try {
       await mutateAsync({
         url: requestData.url.trim(),
         method: requestData.method,
         name: requestName.trim(),
       });
-     
+
       toast.success(`Request saved to "${selectedCollection?.name}" collection`);
       setIsModalOpen(false);
     } catch (err) {
@@ -116,7 +116,7 @@ const SaveRequestToCollectionModal = ({
       submitVariant="default"
     >
       <div className="space-y-4">
-       
+
         <div>
           <label className="block text-sm font-medium mb-2 text-zinc-200">Request name</label>
           <div className="relative">
@@ -137,8 +137,8 @@ const SaveRequestToCollectionModal = ({
 
         <div>
           <label className="block text-sm font-medium mb-2 text-zinc-200">Select location</label>
-          
-   
+
+
           <div className="flex items-center space-x-2 text-sm text-zinc-400 mb-3">
             <span>{selectedWorkspace?.name || "workspace"}</span>
             <span>›</span>
@@ -177,11 +177,10 @@ const SaveRequestToCollectionModal = ({
                 <div
                   key={collection.id}
                   onClick={() => setSelectedCollectionId(collection.id)}
-                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                    selectedCollectionId === collection.id
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${selectedCollectionId === collection.id
                       ? "bg-indigo-600/20 border border-indigo-500/50 shadow-lg shadow-indigo-500/10"
                       : "hover:bg-zinc-800 border border-transparent"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center space-x-3">
                     {selectedCollectionId === collection.id ? (
@@ -191,13 +190,12 @@ const SaveRequestToCollectionModal = ({
                     ) : (
                       <Folder className="w-4 h-4 text-zinc-400" />
                     )}
-                    <span className={`text-sm font-medium ${
-                      selectedCollectionId === collection.id ? "text-indigo-200" : "text-zinc-200"
-                    }`}>
+                    <span className={`text-sm font-medium ${selectedCollectionId === collection.id ? "text-indigo-200" : "text-zinc-200"
+                      }`}>
                       {collection.name}
                     </span>
                   </div>
-                  
+
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                       <span className="text-zinc-500">⋯</span>
