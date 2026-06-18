@@ -12,7 +12,7 @@ import WorkSpace from './workspace'
 
 interface Props {
   user: UserProps
-//   workspace: WorkspaceProps
+//  workspace: WorkspaceProps
 }
 
 const Header = ({ user }: Props) => {
