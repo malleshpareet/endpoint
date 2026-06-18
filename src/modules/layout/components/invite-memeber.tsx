@@ -16,34 +16,36 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { toast } from "sonner";
 import { Hint } from "@/components/ui/hint";
+import { useWorkspaceStore } from "../stores";
+import { useGenerateWorkspaceInvite, useGetWorkspaceMemebers } from "@/modules/invites/hooks/invites";
 
 const InviteMember = () => {
   const [inviteLink, setInviteLink] = useState("");
-//   const { selectedWorkspace } = useWorkspaceStore();
+ const { selectedWorkspace } = useWorkspaceStore();
 
-//   const { mutateAsync, isPending } = useGenerateWorkspaceInvite(
-//     selectedWorkspace?.id || ""
-//   );
+  const { mutateAsync, isPending } = useGenerateWorkspaceInvite(
+    selectedWorkspace?.id || ""
+  );
 
-//   const { data: workspaceMembers, isLoading } = useGetWorkspaceMemebers(
-//     selectedWorkspace?.id || ""
-//   );
+  const { data: workspaceMembers, isLoading } = useGetWorkspaceMemebers(
+    selectedWorkspace?.id || ""
+  );
 
 //   console.log("Selected Workspace members: ", workspaceMembers);
 
-//   const generateInviteLink = async () => {
-//     if (!selectedWorkspace?.id) {
-//       toast.error("Please select a workspace first");
-//       return;
-//     }
-//     try {
-//       const response = await mutateAsync();
-//       setInviteLink(response);
-//       toast.success("Invite link generated!");
-//     } catch (error) {
-//       toast.error("Failed to generate invite link");
-//     }
-//   };
+  const generateInviteLink = async () => {
+    if (!selectedWorkspace?.id) {
+      toast.error("Please select a workspace first");
+      return;
+    }
+    try {
+      const response = await mutateAsync();
+      setInviteLink(response);
+      toast.success("Invite link generated!");
+    } catch (error) {
+      toast.error("Failed to generate invite link");
+    }
+  };
 
   const copyToClipboard = async () => {
     if (inviteLink) {
@@ -64,11 +66,11 @@ const InviteMember = () => {
 
       <DropdownMenuContent className="w-80 rounded-xl" align="end">
         <div className="p-4">
-          {/* <DropdownMenuLabel>Invite to {selectedWorkspace?.name}</DropdownMenuLabel> */}
+          <DropdownMenuLabel>Invite to {selectedWorkspace?.name}</DropdownMenuLabel>
           <DropdownMenuSeparator />
 
           {/* Members Avatars */}
-          {/* <div className="flex -space-x-2 overflow-hidden mb-3">
+          <div className="flex -space-x-2 overflow-hidden mb-3">
             {isLoading ? (
               <p className="text-xs text-muted-foreground">Loading members...</p>
             ) : (
@@ -83,7 +85,7 @@ const InviteMember = () => {
                 </Hint>
               ))
             )}
-          </div> */}
+          </div>
 
           {/* Invite Link Input */}
           <div className="flex gap-2 items-center">
@@ -103,14 +105,14 @@ const InviteMember = () => {
           </div>
 
           {/* Generate Button */}
-          {/* <Button
+          <Button
             className="mt-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white"
             onClick={generateInviteLink}
             disabled={isPending}
           >
             <LinkIcon className="h-4 w-4 mr-2" />
             {isPending ? "Generating..." : "Generate Link"}
-          </Button> */}
+          </Button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
