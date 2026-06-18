@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { signIn } from '@/lib/auth-client'
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import Link from 'next/link'
+import Image from 'next/image'
 import React, { useState } from 'react'
 import { Spinner } from '@/components/ui/spinner'
 
@@ -21,7 +22,8 @@ const LoginPage = () => {
                 <div className='bg-card h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border p-0.5 shadow-md dark:[--color-muted:var(--color-zinc-900)] '>
                     <div className='p-8 pb-6'>
                         <div>
-                            <Link href={"/"}>
+                            <Link href={"/"} className="flex items-center gap-2">
+                                <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={48} height={48} />
                                 <h1 className='text-2xl font-bold'>Httply</h1>
                             </Link>
                             <h1 className='mb-1 mt-4 text-xl font-semibold'>Sign in to Httply</h1>
