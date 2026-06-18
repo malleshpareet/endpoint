@@ -32,7 +32,7 @@ const SearchBar = () => {
   return (
     <>
       {/* Search Button */}
-      <button 
+      <button
         onClick={() => setOpen(true)}
         className="relative flex flex-1 cursor-text items-center justify-between self-stretch rounded bg-zinc-900 px-4 py-2 text-gray-500 transition hover:bg-zinc-800 hover:text-gray-200 focus-visible:bg-zinc-700 focus-visible:text-gray-200 overflow-hidden"
       >
@@ -49,8 +49,8 @@ const SearchBar = () => {
       {/* Command Dialog */}
       <CommandDialog open={open} onOpenChange={setOpen}>
         <div className="bg-zinc-900 border border-zinc-800">
-          <CommandInput 
-            placeholder="Type a command or search..." 
+          <CommandInput
+            placeholder="Type a command or search..."
             className="bg-transparent border-none text-gray-300 placeholder:text-gray-500"
           />
           <CommandList className="bg-zinc-900">
@@ -70,7 +70,7 @@ const SearchBar = () => {
               </CommandItem>
             </CommandGroup>
           </CommandList>
-          
+
           {/* Bottom navigation hints */}
           <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800 bg-zinc-900">
             <div className="flex items-center space-x-4 text-xs text-gray-500">

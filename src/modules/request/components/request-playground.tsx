@@ -27,14 +27,14 @@ export default function PlaygroundPage() {
       return {
         name: "Untitled Request",
         method: REST_METHOD.GET as REST_METHOD,
-        url: "https://echo.hoppscotch.io"
+        url: " "
       };
     }
 
     return {
       name: activeTab.title || "Untitled Request",
       method: (activeTab.method as REST_METHOD) || REST_METHOD.GET,
-      url: activeTab.url || "https://echo.hoppscotch.io"
+      url: activeTab.url || " "
     };
   };
 
@@ -53,7 +53,7 @@ export default function PlaygroundPage() {
 
         try {
           await mutateAsync({
-            url: activeTab.url || "https://echo.hoppscotch.io",
+            url: activeTab.url || " ",
             method: activeTab.method as REST_METHOD,
             name: activeTab.title || "Untitled Request",
             body: activeTab.body,
@@ -94,7 +94,7 @@ export default function PlaygroundPage() {
     return (
       <div className="flex space-y-4 flex-col h-full items-center justify-center">
         <div className="flex flex-col justify-center items-center h-40 w-40 border rounded-full bg-zinc-900">
-          <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={80} height={80} />
+          <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={64} height={64} className="object-contain" />
         </div>
 
 

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Hint } from "@/components/ui/hint";
-import { Loader, Plus, User } from "lucide-react";
+import { Loader, Plus, User, Trash } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import {
@@ -16,14 +16,16 @@ import { Separator } from "@/components/ui/separator";
 import { useWorkspaces } from "@/modules/workspace/hooks/workspace";
 import { useWorkspaceStore } from "../stores";
 import CreateWorkspace from "./create-workspace";
+import DeleteWorkspaceModal from "./delete-workspace";
 
 
+import { UserProps } from "../types";
 
-
-const WorkSpace = () => {
+const WorkSpace = ({ user }: { user?: UserProps }) => {
   const { data: workspaces, isLoading } = useWorkspaces();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { selectedWorkspace, setSelectedWorkspace } = useWorkspaceStore();
 
@@ -60,31 +62,60 @@ const WorkSpace = () => {
             </span>
           </SelectTrigger>
           <SelectContent position="popper" align="start" sideOffset={5}>
-            {workspaces.map((ws) => (
-              <SelectItem key={ws.id} value={ws.id}>
-                {ws.name}
-              </SelectItem>
-            ))}
+            {workspaces.map((ws) => {
+              const isInvited = user && ws.ownerId !== user.id;
+              return (
+                <SelectItem key={ws.id} value={ws.id}>
+                  {ws.name} {isInvited && <span className="text-xs text-indigo-400 opacity-80 ml-2">(Invited)</span>}
+                </SelectItem>
+              );
+            })}
             <Separator className="my-1" />
             <div className="p-2 flex items-center justify-between w-full relative z-20">
               <span className="text-sm font-semibold text-zinc-600">
                 My Workspaces
               </span>
 
-              <Button
-                size="icon"
-                variant="outline"
-                className="relative z-30"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Plus size={16} className="text-indigo-400" />
-              </Button>
+              <div className="flex space-x-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="relative z-30 h-7 w-7"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <Plus size={14} className="text-indigo-400" />
+                </Button>
+                {selectedWorkspace?.name !== "Personal Workspace" && (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="relative z-30 h-7 w-7 hover:bg-red-400/10 hover:border-red-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDeleteModalOpen(true);
+                    }}
+                  >
+                    <Trash size={14} className="text-red-400" />
+                  </Button>
+                )}
+              </div>
             </div>
           </SelectContent>
         </Select>
       </Hint>
 
       <CreateWorkspace isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
+      {selectedWorkspace && (
+        <DeleteWorkspaceModal 
+          isModalOpen={isDeleteModalOpen} 
+          setIsModalOpen={setIsDeleteModalOpen} 
+          workspaceId={selectedWorkspace.id} 
+          workspaceName={selectedWorkspace.name}
+        />
+      )}
     </>
   );
 };

@@ -97,7 +97,7 @@ model WorkspaceInvite {
 
 model Workspace {
   id          String  @id @default(cuid())
-  name        String  @unique
+  name        String
   ownerId     String
   owner       User    @relation("UserWorkspaces", fields: [ownerId], references: [id])
   description String?
@@ -106,11 +106,23 @@ model Workspace {
   invites     WorkspaceInvite[]
   collections Collection[]
 
+  environments Environment[]
+  globalVariables Json? @default("[]")
+
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @default(now())
   // workspaceInvites WorkspaceInvite[]
 
   @@unique([name, ownerId])
+}
+
+model Environment {
+  id          String     @id @default(cuid())
+  name        String
+  values      Json       // e.g. { "BASE_URL": "https://api.example.com", "AUTH": "Bearer xxx" }
+
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 enum MEMBER_ROLE {
@@ -146,6 +158,7 @@ model Collection {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   requests    Request[]
+  variables   Json? @default("[]")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

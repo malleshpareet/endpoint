@@ -38,13 +38,15 @@ export const deleteCollection = async (collectionId: string) => {
   });
 };
 
-export const editCollection = async (collectionId: string, name: string) => {
+export const editCollection = async (collectionId: string, name: string, variables?: any) => {
+  const data: any = { name };
+  if (variables !== undefined) {
+    data.variables = variables;
+  }
   await db.collection.update({
     where: {
       id: collectionId,
     },
-    data: {
-      name,
-    },
+    data,
   });
 };

@@ -8,8 +8,13 @@ import { randomBytes } from "crypto"
 
 export const generateWorkspaceInvite = async (workspaceId: string) => {
   const token = randomBytes(16).toString("hex")
-const user = await currentUser()
-if(!user) throw new Error("Unauthorized")
+  const user = await currentUser()
+  if(!user) throw new Error("Unauthorized")
+  
+  const workspace = await db.workspace.findUnique({ where: { id: workspaceId } })
+  if (!workspace) throw new Error("Workspace not found")
+  if (workspace.name === "Personal Workspace") throw new Error("Cannot invite to Personal Workspace")
+
   const invite = await db.workspaceInvite.create({
     data: {
       workspaceId,

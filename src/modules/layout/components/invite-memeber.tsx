@@ -31,6 +31,18 @@ const InviteMember = () => {
     selectedWorkspace?.id || ""
   );
 
+  if (selectedWorkspace?.name === "Personal Workspace") {
+    return (
+      <Hint label="Cannot invite to Personal Workspace">
+        <span className="inline-block cursor-not-allowed">
+          <Button disabled className="border border-zinc-700 bg-zinc-800/50 text-zinc-600 pointer-events-none">
+            <UserPlus className="size-4 text-emerald-400" />
+          </Button>
+        </span>
+      </Hint>
+    );
+  }
+
   //   console.log("Selected Workspace members: ", workspaceMembers);
 
   const generateInviteLink = async () => {

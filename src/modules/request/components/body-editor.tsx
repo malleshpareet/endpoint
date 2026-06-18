@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -28,6 +28,7 @@ import { useGenerateJsonBody } from '@/modules/ai/hooks/ai-suggestion'
 
 import { useRequestPlaygroundStore } from '../store/useRequestStore'
 import { useWorkspaceStore } from '@/modules/layout/stores'
+import { useEnvironments, useWorkspaceGlobals } from '@/modules/environments/hooks/environments'
 
 
 const MonacoEditor = dynamic(
@@ -59,7 +60,9 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   const [copied, setCopied] = useState(false)
   const [showGenerateDialog, setShowGenerateDialog] = useState(false)
   const [prompt, setPrompt] = useState('')
-  const {selectedWorkspace} = useWorkspaceStore()
+  const {selectedWorkspace, activeEnvironmentId} = useWorkspaceStore()
+  const { data: environments } = useEnvironments(selectedWorkspace?.id);
+  const { data: globalVariables } = useWorkspaceGlobals(selectedWorkspace?.id);
 
   const {tabs, activeTabId} = useRequestPlaygroundStore();
 
@@ -80,6 +83,52 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   const handleEditorChange = (value?: string) => {
     form.setValue('body', value || '', { shouldValidate: true })
   }
+
+  // Monaco decorations
+  const monacoRef = useRef<any>(null);
+  const editorRef = useRef<any>(null);
+  const decorationsRef = useRef<any[]>([]);
+
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+    updateDecorations(form.getValues('body') || '');
+  };
+
+  const updateDecorations = (value: string) => {
+    if (!editorRef.current || !monacoRef.current) return;
+
+    const regex = /\{\{([^}]+)\}\}/g;
+    const matches = [];
+    let match;
+    const model = editorRef.current.getModel();
+    
+    if (!model) return;
+
+    while ((match = regex.exec(value)) !== null) {
+      const varName = match[1];
+      const envVars = environments?.find(e => e.id === activeEnvironmentId)?.values || [];
+      const isFound = (envVars as any[])?.some(v => v.key === varName) || 
+                      (globalVariables as any[])?.some(v => v.key === varName);
+
+      const startPos = model.getPositionAt(match.index);
+      const endPos = model.getPositionAt(match.index + match[0].length);
+
+      matches.push({
+        range: new monacoRef.current.Range(startPos.lineNumber, startPos.column, endPos.lineNumber, endPos.column),
+        options: {
+          inlineClassName: isFound ? 'text-blue-400 font-bold bg-blue-500/20' : 'text-red-400 font-bold bg-red-500/20',
+          hoverMessage: { value: isFound ? `**${varName}**\nResolved variable` : `**${varName}**\nVariable not found` }
+        }
+      });
+    }
+
+    decorationsRef.current = editorRef.current.deltaDecorations(decorationsRef.current, matches);
+  };
+
+  useEffect(() => {
+    updateDecorations(bodyValue || '');
+  }, [bodyValue, environments, globalVariables, activeEnvironmentId]);
 
   // Handle copy
   const handleCopy = async () => {
@@ -262,27 +311,28 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <MonacoEditor
-                      height="320px"
-                      value={field.value}
-                      language={contentType === 'application/json' ? 'json' : 'plaintext'}
-                      theme="vs-dark"
-                      options={{
-                        automaticLayout: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        fontSize: 18,
-                        lineNumbers: 'on',
-                        roundedSelection: false,
-                        padding: { top: 16, bottom: 16 },
-                        scrollbar: {
-                          vertical: 'visible',
-                          horizontal: 'visible',
-                          useShadows: false,
-                        }
-                      }}
-                      onChange={handleEditorChange}
-                    />
+                      <MonacoEditor
+                        height="320px"
+                        value={field.value}
+                        language={contentType === 'application/json' ? 'json' : 'plaintext'}
+                        theme="vs-dark"
+                        options={{
+                          automaticLayout: true,
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          fontSize: 14,
+                          lineNumbers: 'on',
+                          roundedSelection: false,
+                          padding: { top: 16, bottom: 16 },
+                          scrollbar: {
+                            vertical: 'visible',
+                            horizontal: 'visible',
+                            useShadows: false,
+                          }
+                        }}
+                        onChange={handleEditorChange}
+                        onMount={handleEditorDidMount}
+                      />
                   </FormControl>
                 </FormItem>
               )}

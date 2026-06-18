@@ -68,16 +68,7 @@ type PlaygroundState = {
 export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
   responseViewerData:null,
   setResponseViewerData: (data) => set({ responseViewerData: data }),
-  tabs: [
-    {
-      id: nanoid(),
-      title: "Request",
-      method: "GET",
-      url: "https://echo.hoppscotch.io",
-      unsavedChanges: false,
-      
-    },
-  ],
+  tabs: [],
   activeTabId: null,
 
   addTab: () =>
@@ -147,6 +138,8 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         unsavedChanges: false,
       };
 
+
+
       return {
         tabs: [...state.tabs, newTab],
         activeTabId: newTab.id,
@@ -174,3 +167,4 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
   })),
 
 }));
+
