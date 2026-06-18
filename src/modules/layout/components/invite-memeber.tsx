@@ -21,7 +21,7 @@ import { useGenerateWorkspaceInvite, useGetWorkspaceMemebers } from "@/modules/i
 
 const InviteMember = () => {
   const [inviteLink, setInviteLink] = useState("");
- const { selectedWorkspace } = useWorkspaceStore();
+  const { selectedWorkspace } = useWorkspaceStore();
 
   const { mutateAsync, isPending } = useGenerateWorkspaceInvite(
     selectedWorkspace?.id || ""
@@ -31,7 +31,7 @@ const InviteMember = () => {
     selectedWorkspace?.id || ""
   );
 
-//   console.log("Selected Workspace members: ", workspaceMembers);
+  //   console.log("Selected Workspace members: ", workspaceMembers);
 
   const generateInviteLink = async () => {
     if (!selectedWorkspace?.id) {
@@ -70,13 +70,13 @@ const InviteMember = () => {
           <DropdownMenuSeparator />
 
           {/* Members Avatars */}
-          <div className="flex -space-x-2 overflow-hidden mb-3">
+          <div className="flex items-center -space-x-2 overflow-visible mb-3 px-1">
             {isLoading ? (
               <p className="text-xs text-muted-foreground">Loading members...</p>
             ) : (
               workspaceMembers?.map((member: any) => (
                 <Hint key={member.id} label={member.user.name || "Unknown User"}>
-                  <Avatar className="border-2 border-background size-8 mt-2">
+                  <Avatar className="border-2 border-background size-8">
                     <AvatarImage src={member.user.image || ""} />
                     <AvatarFallback>
                       {member.user.name?.charAt(0) || "?"}

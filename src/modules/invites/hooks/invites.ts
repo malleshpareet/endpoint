@@ -27,11 +27,10 @@ export const useAcceptWorkspaceInvite = () => {
   
 };
 
-export const useGetWorkspaceMemebers = (workspaceId: string)=>{
-
+export const useGetWorkspaceMemebers = (workspaceId: string) => {
   return useQuery({
-    queryKey: ["workspace-members"],
+    queryKey: ["workspace-members", workspaceId],
     queryFn: async () => getAllWorkspaceMembers(workspaceId),
-    
+    enabled: !!workspaceId,
   });
-}
+};

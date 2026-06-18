@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useRequestPlaygroundStore } from "../store/useRequestStore";
 import { Sparkle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// import { useSuggestRequestName } from "@/modules/ai/hooks/ai-suggestion";
+import { useSuggestRequestName } from "@/modules/ai/hooks/ai-suggestion";
 import { set } from "zod";
 import { Input } from "@/components/ui/input";
 
@@ -19,7 +19,7 @@ const AddNameModal = ({
   tabId: string;
 }) => {
   const { updateTab, tabs, markUnsaved } = useRequestPlaygroundStore();
-  // const {mutateAsync , data , isPending , isError} = useSuggestRequestName();
+  const {mutateAsync , data , isPending , isError} = useSuggestRequestName();
   const tab = tabs.find((t) => t.id === tabId);
 
   const [name, setName] = useState(tab?.title || "");
@@ -37,7 +37,7 @@ const AddNameModal = ({
       markUnsaved(tabId, true); 
       toast.success("Request name updated");
       setIsModalOpen(false);
-      // setSuggestions([]);
+      setSuggestions([]);
     } catch (err) {
       toast.error("Failed to update request name");
       console.error(err);
@@ -63,7 +63,7 @@ const AddNameModal = ({
             onChange={(e) => setName(e.target.value)}
           />
 
-           {/* <Button 
+           <Button 
           variant={"outline"} 
           size={"icon"} 
           onClick={async () => {
@@ -88,7 +88,7 @@ const AddNameModal = ({
           disabled={isPending}
         >
           <Sparkles className="h-5 w-5 text-indigo-500" />
-        </Button> */}
+        </Button>
         </div>
         {suggestions.length > 0 && (
           <div className="flex flex-col gap-2">
