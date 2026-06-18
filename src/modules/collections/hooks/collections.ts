@@ -33,11 +33,11 @@ export function useDeleteCollection(collectionId:string){
 
 
 
-export function useEditCollection(collectionId: string, name: string) {
+export function useEditCollection(collectionId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => editCollection(collectionId, name),
+    mutationFn: async ({ name, variables }: { name: string, variables?: any }) => editCollection(collectionId, name, variables),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
     },

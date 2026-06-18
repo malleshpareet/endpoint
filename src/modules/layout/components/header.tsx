@@ -12,7 +12,7 @@ import WorkSpace from './workspace'
 
 interface Props {
   user: UserProps
-//  workspace: WorkspaceProps
+  //  workspace: WorkspaceProps
 }
 
 const Header = ({ user }: Props) => {
@@ -20,7 +20,7 @@ const Header = ({ user }: Props) => {
   return (
     <header className='grid grid-cols-5 grid-rows-1 gap-2 overflow-x-auto overflow-hidden p-2 border'>
       <div className='col-span-2 flex items-center justify-between space-x-2 hover:cursor-pointer hover:opacity-80 ml-4'>
-        <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={64} height={64} />
+        <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={48} height={48} className="object-contain" />
       </div>
 
       <div className='col-span-1 flex items-center justify-between space-x-2'>
@@ -30,7 +30,7 @@ const Header = ({ user }: Props) => {
       </div>
       <div className='col-span-2 flex items-center justify-end space-x-2 hover:cursor-pointer hover:opacity-80'>
         <InviteMember />
-        <WorkSpace/>
+        <WorkSpace user={user} />
         <UserButton user={user} size='sm' />
       </div>
     </header>

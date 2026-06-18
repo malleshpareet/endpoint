@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { Archive, Clock, Code, Share2, ExternalLink, HelpCircle, Plus, Search, Upload, Loader } from 'lucide-react';
+import { Archive, Clock, Code, Share2, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box } from 'lucide-react';
 import React, { useState } from 'react';
 import { useCollections } from '@/modules/collections/hooks/collections';
 import CreateCollection from './create-collection';
 import EmptyCollections from './empty-collections';
 import CollectionFolder from './collection-folder';
+import EnvironmentsTab from '@/modules/environments/components/environments-tab';
+import { HistoryTab } from '@/modules/request/components/history-tab';
 
 
 interface Props {
@@ -27,6 +29,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
 
     const sidebarItems = [
         { icon: Archive, label: 'Collections' },
+        { icon: Box, label: 'Environments' },
         { icon: Clock, label: 'History' },
         { icon: Share2, label: 'Share' },
         { icon: Code, label: 'Code' }
@@ -77,7 +80,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                             collections && collections.length > 0 ? (
                                 collections.map((collection) => (
                                     <div className='flex flex-col justify-start items-start p-3 border-b border-zinc-800 w-full' key={collection.id}>
-                                        <CollectionFolder  collection={collection} />
+                                        <CollectionFolder collection={collection} />
                                     </div>
                                 ))
                             ) : (
@@ -87,15 +90,21 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                     </div>
                 );
 
+            case 'Environments':
+                return <EnvironmentsTab />;
+
+            case 'History':
+                return <HistoryTab workspaceId={currentWorkspace?.id} />;
+
             default:
                 return <div className="p-4 text-zinc-400">Select a tab to view content</div>;
         }
     };
 
     return (
-        <div className="flex h-screen bg-zinc-900">
+        <div className="flex h-screen bg-zinc-900 w-full overflow-hidden">
             {/* Sidebar */}
-            <div className="w-12 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center py-4 space-y-4">
+            <div className="w-12 flex-shrink-0 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center py-4 space-y-4">
                 {sidebarItems.map((item, index) => (
                     <div
                         key={index}
@@ -110,7 +119,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                 ))}
             </div>
 
-            <div className="flex-1 bg-zinc-900 overflow-y-auto">
+            <div className="flex-1 bg-zinc-900 overflow-y-auto min-w-0">
                 {renderTabContent()}
             </div>
 

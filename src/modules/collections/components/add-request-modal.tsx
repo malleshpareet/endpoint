@@ -17,7 +17,7 @@ const SaveRequestToCollectionModal = ({
   setIsModalOpen,
   requestData = {
     name: "Untitled",
-    url: "https://echo.hoppscotch.io",
+    url: "",
     method: REST_METHOD.GET,
   },
   initialName = "Untitled",
@@ -34,6 +34,8 @@ const SaveRequestToCollectionModal = ({
   collectionId?: string
 }) => {
   const [requestName, setRequestName] = useState(initialName);
+  const [requestUrl, setRequestUrl] = useState(requestData?.url || " ");
+  const [requestMethod, setRequestMethod] = useState<REST_METHOD>(requestData?.method || REST_METHOD.GET);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>(collectionId || "");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -45,11 +47,13 @@ const SaveRequestToCollectionModal = ({
 
   useEffect(() => {
     if (isModalOpen) {
-      setRequestName(requestData.name || initialName);
+      setRequestName(requestData?.name || initialName);
+      setRequestUrl(requestData?.url || "");
+      setRequestMethod(requestData?.method || REST_METHOD.GET);
       setSelectedCollectionId(collectionId || "");
       setSearchTerm("");
     }
-  }, [isModalOpen, requestData.name, initialName]);
+  }, [isModalOpen, requestData?.name, requestData?.url, requestData?.method, initialName, collectionId]);
 
 
   useEffect(() => {
@@ -92,8 +96,8 @@ const SaveRequestToCollectionModal = ({
 
     try {
       await mutateAsync({
-        url: requestData.url.trim(),
-        method: requestData.method,
+        url: requestUrl.trim(),
+        method: requestMethod,
         name: requestName.trim(),
       });
 
@@ -128,9 +132,18 @@ const SaveRequestToCollectionModal = ({
               autoFocus
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <span className={`text-xs font-bold px-2 py-1 rounded ${requestColorMap[requestData.method]} bg-zinc-700`}>
-                {requestData.method}
-              </span>
+              <Select value={requestMethod} onValueChange={(val) => setRequestMethod(val as REST_METHOD)}>
+                <SelectTrigger className={`text-xs font-bold px-2 py-1 h-auto rounded border-0 focus:ring-0 focus:ring-offset-0 ${requestColorMap[requestMethod]} bg-zinc-700`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(REST_METHOD).map((method) => (
+                    <SelectItem key={method} value={method} className={requestColorMap[method]}>
+                      {method}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -178,8 +191,8 @@ const SaveRequestToCollectionModal = ({
                   key={collection.id}
                   onClick={() => setSelectedCollectionId(collection.id)}
                   className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${selectedCollectionId === collection.id
-                      ? "bg-indigo-600/20 border border-indigo-500/50 shadow-lg shadow-indigo-500/10"
-                      : "hover:bg-zinc-800 border border-transparent"
+                    ? "bg-indigo-600/20 border border-indigo-500/50 shadow-lg shadow-indigo-500/10"
+                    : "hover:bg-zinc-800 border border-transparent"
                     }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -218,11 +231,16 @@ const SaveRequestToCollectionModal = ({
           </div>
         )}
 
-        {/* URL Preview (Optional) */}
+        {/* URL Input */}
         <div className="p-2 bg-zinc-900 rounded border border-zinc-700">
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-zinc-500">URL:</span>
-            <span className="text-zinc-300 truncate">{requestData.url}</span>
+            <input
+              className="flex-1 bg-transparent text-zinc-300 focus:outline-none"
+              value={requestUrl}
+              onChange={(e) => setRequestUrl(e.target.value)}
+              placeholder="https://..."
+            />
           </div>
         </div>
       </div>

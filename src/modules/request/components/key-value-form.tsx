@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Plus, Trash2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VariableInput } from "./variable-input";
 
 const keyValueSchema = z.object({
   items: z.array(
@@ -196,7 +197,7 @@ const KeyValueFormEditor: React.FC<KeyValueFormEditorProps> = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Input
+                          <VariableInput
                             {...field}
                             placeholder={placeholder.key}
                             className="bg-transparent border-0 focus:ring-0 focus:border-0 text-sm placeholder:text-zinc-500"
@@ -217,7 +218,7 @@ const KeyValueFormEditor: React.FC<KeyValueFormEditorProps> = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Input
+                          <VariableInput
                             {...field}
                             placeholder={placeholder.value}
                             className="bg-transparent border-0 focus:ring-0 focus:border-0 text-sm placeholder:text-zinc-500"

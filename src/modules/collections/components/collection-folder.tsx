@@ -15,10 +15,11 @@ import {
 import EditCollectionModal from './edit-collection';
 import DeleteCollectionModal from './delete-collection';
 import AddRequestCollectionModal from './add-request-modal';
+import EditRequestModal from './edit-request';
+import DeleteRequestModal from './delete-request';
 import { useGetAllRequestFromCollection } from '@/modules/request/hooks/request';
 import { REST_METHOD } from '@prisma/client';
 import { useRequestPlaygroundStore } from '@/modules/request/store/useRequestStore';
-//import { useRequestPlaygroundStore } from '@/modules/request/store/useRequestStore';
 
 interface Props {
   collection: {
@@ -34,10 +35,12 @@ const CollectionFolder = ({ collection }: Props) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isAddRequestOpen, setIsAddRequestOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [requestToEdit, setRequestToEdit] = useState<{ id: string; name: string } | null>(null);
+  const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
 
   const { data: requestData, isPending, isError } = useGetAllRequestFromCollection(collection.id);
 
-  const {  openRequestTab } = useRequestPlaygroundStore();
+  const { openRequestTab } = useRequestPlaygroundStore();
 
   const requestColorMap: Record<REST_METHOD, string> = {
     [REST_METHOD.GET]: "text-green-500",
@@ -131,7 +134,7 @@ const CollectionFolder = ({ collection }: Props) => {
             {isPending ? (
               <div className="pl-8 py-2">
                 <div className="flex items-center space-x-2">
-                  <Loader size={16} className='text-indigo-400 animate-spin'/>
+                  <Loader size={16} className='text-indigo-400 animate-spin' />
                 </div>
               </div>
             ) : isError ? (
@@ -175,11 +178,17 @@ const CollectionFolder = ({ collection }: Props) => {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-32">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            setRequestToEdit({ id: request.id, name: request.name || request.url });
+                          }}>
                             <Edit className='text-blue-400 mr-2 w-3 h-3' />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            setRequestToDelete(request.id);
+                          }}>
                             <Trash className='text-red-400 mr-2 w-3 h-3' />
                             Delete
                           </DropdownMenuItem>
@@ -204,6 +213,7 @@ const CollectionFolder = ({ collection }: Props) => {
         setIsModalOpen={setIsEditOpen}
         collectionId={collection.id}
         initialName={collection.name}
+        initialVariables={(collection as any).variables}
       />
 
       <DeleteCollectionModal
@@ -218,6 +228,23 @@ const CollectionFolder = ({ collection }: Props) => {
         collectionId={collection.id}
         initialName="Untitled Request"
       />
+
+      {requestToEdit && (
+        <EditRequestModal
+          isModalOpen={!!requestToEdit}
+          setIsModalOpen={(open) => !open && setRequestToEdit(null)}
+          requestId={requestToEdit.id}
+          initialName={requestToEdit.name}
+        />
+      )}
+
+      {requestToDelete && (
+        <DeleteRequestModal
+          isModalOpen={!!requestToDelete}
+          setIsModalOpen={(open) => !open && setRequestToDelete(null)}
+          requestId={requestToDelete}
+        />
+      )}
     </>
   );
 };

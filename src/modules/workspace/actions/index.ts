@@ -101,3 +101,27 @@ export const getWorkspaceById = async (id: string) => {
     });
     return workspace;
 };
+
+export async function deleteWorkspace(id: string) {
+    const user = await currentUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const workspace = await db.workspace.findUnique({
+        where: { id }
+    });
+
+    if (!workspace) throw new Error("Workspace not found");
+    if (workspace.ownerId !== user.id) throw new Error("Only the owner can delete a workspace");
+    if (workspace.name === "Personal Workspace") throw new Error("Cannot delete Personal Workspace");
+
+    await db.$transaction([
+        db.workspaceMember.deleteMany({
+            where: { workspaceId: id }
+        }),
+        db.workspace.delete({
+            where: { id }
+        })
+    ]);
+
+    return { success: true };
+}

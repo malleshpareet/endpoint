@@ -4,7 +4,10 @@ import {
   getAllRequestFromCollection,
   Request,
   run,
+  runDirect,
   saveRequest,
+  deleteRequest,
+  renameRequest,
 } from "../actions";
 import { useRequestPlaygroundStore } from "../store/useRequestStore";
 
@@ -30,7 +33,7 @@ export function useGetAllRequestFromCollection(collectionId: string) {
 }
 
 export function useSaveRequest(id: string) {
- const { updateTabFromSavedRequest, activeTabId } = useRequestPlaygroundStore();
+  const { updateTabFromSavedRequest, activeTabId } = useRequestPlaygroundStore();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -39,21 +42,56 @@ export function useSaveRequest(id: string) {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
 
       // @ts-ignore
-       updateTabFromSavedRequest(activeTabId!, data);
+      updateTabFromSavedRequest(activeTabId!, data);
     },
   });
 }
 
-export function useRunRequest(requestId: string) {
+export function useRunRequest(requestId: string, environmentId?: string | null) {
 
-  const {setResponseViewerData} = useRequestPlaygroundStore();
+  const { setResponseViewerData } = useRequestPlaygroundStore();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => await run(requestId),
+    mutationFn: async () => await run(requestId, environmentId || undefined),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
       //@ts-ignore
       setResponseViewerData(data);
+    },
+  });
+}
+
+export function useRunDirectRequest() {
+  const { setResponseViewerData } = useRequestPlaygroundStore();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestData: any) => await runDirect(requestData),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+      queryClient.invalidateQueries({ queryKey: ["history"] });
+      setResponseViewerData(data as any);
+    },
+  });
+}
+
+export function useDeleteRequest(requestId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => deleteRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+    },
+  });
+}
+
+export function useRenameRequest(requestId: string, name: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => renameRequest(requestId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
     },
   });
 }
