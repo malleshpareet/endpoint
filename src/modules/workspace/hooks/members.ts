@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getWorkspaceMembers, updateWorkspaceMemberRole } from "../actions/members";
+import { getWorkspaceMembers, updateWorkspaceMemberRole, removeWorkspaceMember } from "../actions/members";
 import { MEMBER_ROLE } from "@prisma/client";
 
 export function useWorkspaceMembers(workspaceId: string | undefined) {
@@ -19,6 +19,19 @@ export function useUpdateWorkspaceMemberRole(workspaceId: string) {
     return useMutation({
         mutationFn: async ({ memberId, newRole }: { memberId: string, newRole: MEMBER_ROLE }) => {
             return updateWorkspaceMemberRole(workspaceId, memberId, newRole);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["workspace_members", workspaceId] });
+        }
+    });
+}
+
+export function useRemoveWorkspaceMember(workspaceId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ memberId }: { memberId: string }) => {
+            return removeWorkspaceMember(workspaceId, memberId);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["workspace_members", workspaceId] });

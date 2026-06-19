@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 
 interface ModalProps {
-  children: React.ReactNode
+  children?: React.ReactNode
   title: string
   description?: string
   isOpen: boolean
@@ -56,9 +56,11 @@ const Modal: React.FC<ModalProps> = ({
           )}
         </DialogHeader>
         
-        <div className="py-4">
-          {children}
-        </div>
+        {children && (
+          <div className="py-4">
+            {children}
+          </div>
+        )}
 
         {showFooter && (
           <DialogFooter>
@@ -70,7 +72,8 @@ const Modal: React.FC<ModalProps> = ({
             </Button>
             {onSubmit && (
               <Button
-                className='bg-indigo-400 hover:bg-indigo-500 text-white'
+                variant={submitVariant}
+                className={submitVariant === "default" ? "bg-indigo-400 hover:bg-indigo-500 text-white" : undefined}
                 onClick={handleSubmit}
               >
                 {submitText}
