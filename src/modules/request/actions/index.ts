@@ -2,6 +2,7 @@
 
 import db from "@/lib/db";
 import { REST_METHOD } from "@prisma/client";
+import { verifyWorkspaceRole } from "@/modules/workspace/actions/permissions";
 
 import axios, { AxiosRequestConfig } from "axios";
 
@@ -16,6 +17,10 @@ export type Request = {
 
 
 export const addRequestToCollection = async (collectionId: string, value: Request) => {
+  const collection = await db.collection.findUnique({ where: { id: collectionId } });
+  if (!collection) throw new Error("Collection not found");
+  await verifyWorkspaceRole(collection.workspaceId, ['ADMIN', 'EDITOR']);
+
   const request = await db.request.create({
     data: {
       collectionId,
@@ -34,6 +39,9 @@ export const addRequestToCollection = async (collectionId: string, value: Reques
 
 
 export const saveRequest = async (id: string, value: Request) => {
+  const req = await db.request.findUnique({ where: { id }, include: { collection: true } });
+  if (!req || !req.collection) throw new Error("Request or collection not found");
+  await verifyWorkspaceRole(req.collection.workspaceId, ['ADMIN', 'EDITOR']);
 
   console.log(value, id);
   const request = await db.request.update({
@@ -63,14 +71,27 @@ export const getAllRequestFromCollection = async (collectionId: string) => {
 }
 
 export const deleteRequest = async (id: string) => {
-  await db.request.delete({
-    where: {
-      id,
-    },
-  });
+  try {
+    const req = await db.request.findUnique({ where: { id }, include: { collection: true } });
+    if (!req || !req.collection) throw new Error("Request or collection not found");
+    await verifyWorkspaceRole(req.collection.workspaceId, ['ADMIN']);
+
+    await db.request.delete({
+      where: {
+        id,
+      },
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 export const renameRequest = async (id: string, name: string) => {
+  const req = await db.request.findUnique({ where: { id }, include: { collection: true } });
+  if (!req || !req.collection) throw new Error("Request or collection not found");
+  await verifyWorkspaceRole(req.collection.workspaceId, ['ADMIN', 'EDITOR']);
+
   const request = await db.request.update({
     where: {
       id,

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Archive, Clock, Code, Share2, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box } from 'lucide-react';
+import { Archive, Clock, Code, Share2, Users, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box } from 'lucide-react';
 import React, { useState } from 'react';
 import { useCollections } from '@/modules/collections/hooks/collections';
 import CreateCollection from './create-collection';
@@ -7,6 +7,7 @@ import EmptyCollections from './empty-collections';
 import CollectionFolder from './collection-folder';
 import EnvironmentsTab from '@/modules/environments/components/environments-tab';
 import { HistoryTab } from '@/modules/request/components/history-tab';
+import { MembersTab } from '@/modules/workspace/components/members-tab';
 
 
 interface Props {
@@ -31,7 +32,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
         { icon: Archive, label: 'Collections' },
         { icon: Box, label: 'Environments' },
         { icon: Clock, label: 'History' },
-        { icon: Share2, label: 'Share' },
+        { icon: Users, label: 'Team' },
         { icon: Code, label: 'Code' }
     ];
 
@@ -96,6 +97,8 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
             case 'History':
                 return <HistoryTab workspaceId={currentWorkspace?.id} />;
 
+            case 'Team':
+                return <MembersTab workspaceId={currentWorkspace?.id} />;
             default:
                 return <div className="p-4 text-zinc-400">Select a tab to view content</div>;
         }

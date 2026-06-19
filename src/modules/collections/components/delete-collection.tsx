@@ -21,8 +21,8 @@ const DeleteCollectionModal = ({
       await mutateAsync();
       toast.success("Collection deleted successfully");
       setIsModalOpen(false);
-    } catch (err) {
-      toast.error("Failed to delete collection");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete collection");
       console.error("Failed to delete collection:", err);
     }
   };

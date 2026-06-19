@@ -11,7 +11,11 @@ export const useGenerateWorkspaceInvite = (workspaceId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => generateWorkspaceInvite(workspaceId),
+    mutationFn: async () => {
+      const res = await generateWorkspaceInvite(workspaceId);
+      if (res?.error) throw new Error(res.error);
+      return res.link;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["workspace-invites", workspaceId],
