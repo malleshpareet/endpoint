@@ -175,6 +175,10 @@ const EnvironmentEditor = ({ env, onBack, isGlobals = false }: { env: any; onBac
     setVariables(newVars);
   };
 
+  const handleAddRow = () => {
+    setVariables([...variables, { key: "", initialValue: "", currentValue: "" }]);
+  };
+
   const handleSave = async () => {
     const cleanVars = variables.filter(v => v.key.trim() !== "");
     
@@ -289,6 +293,17 @@ const EnvironmentEditor = ({ env, onBack, isGlobals = false }: { env: any; onBac
             ))}
           </TableBody>
         </Table>
+        <div className="flex justify-center mt-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-zinc-500 hover:text-zinc-300 bg-zinc-900 hover:bg-zinc-800"
+            onClick={handleAddRow}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Row
+          </Button>
+        </div>
       </div>
     </div>
   );

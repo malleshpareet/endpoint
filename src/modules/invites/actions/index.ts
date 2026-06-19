@@ -68,3 +68,36 @@ export const getAllWorkspaceMembers = async (workspaceId: string) => {
     include: { user: true },
   });
 };
+
+export const inviteUserByEmail = async (workspaceId: string, email: string) => {
+  try {
+    await verifyWorkspaceRole(workspaceId, ['ADMIN']);
+
+    const token = randomBytes(16).toString("hex")
+    const user = await currentUser()
+    if(!user) throw new Error("Unauthorized")
+    
+    const workspace = await db.workspace.findUnique({ where: { id: workspaceId } })
+    if (!workspace) throw new Error("Workspace not found")
+    if (workspace.name === "Personal Workspace") throw new Error("Cannot invite to Personal Workspace")
+
+    const invite = await db.workspaceInvite.create({
+      data: {
+        workspaceId,
+        token,
+        createdById: user.id,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), 
+      }
+    })
+
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invite.token}`
+
+    const { sendInviteEmail } = await import("@/lib/mail");
+    await sendInviteEmail(email, inviteLink, workspace.name, user.name || user.email || "Someone");
+
+    return { success: true }
+  } catch (error: any) {
+    console.error("Error sending invite email:", error);
+    return { success: false, error: error.message };
+  }
+}

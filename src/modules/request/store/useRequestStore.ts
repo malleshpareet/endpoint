@@ -10,7 +10,7 @@ interface SavedRequest {
   body?: string;
   headers?: string;
   parameters?: string;
- 
+  authorization?: string;
 }
 
 export type RequestTab = {
@@ -21,6 +21,7 @@ export type RequestTab = {
   body?: string;
   headers?: string;
   parameters?: string;
+  authorization?: string;
   unsavedChanges?: boolean;
   requestId?: string; // 👈 link to DB request
   collectionId?: string;

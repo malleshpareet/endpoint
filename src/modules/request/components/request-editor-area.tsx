@@ -3,6 +3,7 @@ import { RequestTab } from "../store/useRequestStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import KeyValueFormEditor from "./key-value-form";
+import AuthorizationEditor from "./authorization-editor";
 
 import { toast } from "sonner";
 import BodyEditor from "./body-editor";
@@ -66,22 +67,43 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
     toast.success("Body updated successfully")
   };
 
+  const handleAuthorizationChange = (authString: string) => {
+    updateTab(tab.id, { authorization: authString });
+  };
+
   return (
     <Tabs
       defaultValue="parameters"
-      className="bg-zinc-900 rounded-md w-full px-4 py-4"
+      className="bg-zinc-950/30 rounded-xl border border-zinc-800/50 shadow-inner w-full flex flex-col h-full overflow-hidden"
     >
-      <TabsList className="bg-zinc-800 rounded-t-md">
-        <TabsTrigger value="parameters" className="flex-1">
-          Parameters
-        </TabsTrigger>
-        <TabsTrigger value="headers" className="flex-1">
-          Headers
-        </TabsTrigger>
-        <TabsTrigger value="body" className="flex-1">
-          Body
-        </TabsTrigger>
-      </TabsList>
+      <div className="p-4 pb-0">
+        <TabsList className="bg-zinc-900/50 backdrop-blur-md border border-zinc-800/50 p-1 rounded-full w-full justify-between gap-1 shadow-sm">
+          <TabsTrigger 
+            value="parameters" 
+            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
+          >
+            Parameters
+          </TabsTrigger>
+          <TabsTrigger 
+            value="authorization" 
+            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
+          >
+            Authorization
+          </TabsTrigger>
+          <TabsTrigger 
+            value="headers" 
+            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
+          >
+            Headers
+          </TabsTrigger>
+          <TabsTrigger 
+            value="body" 
+            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
+          >
+            Body
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="parameters" >
         <KeyValueFormEditor
@@ -92,6 +114,13 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
             value: "Parameter Value",
             description: "URL Parameter",
           }}
+        />
+      </TabsContent>
+
+      <TabsContent value="authorization">
+        <AuthorizationEditor
+          initialData={tab.authorization}
+          onSubmit={handleAuthorizationChange}
         />
       </TabsContent>
 

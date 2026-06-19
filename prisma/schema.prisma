@@ -179,6 +179,7 @@ model Request {
   url        String
   parameters Json?
   headers    Json? // e.g. 
+  authorization Json?
 
   body     Json? // request body (JSON / text)
   response Json? // optional: save last response

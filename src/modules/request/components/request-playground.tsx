@@ -92,20 +92,45 @@ export default function PlaygroundPage() {
 
   if (!activeTab) {
     return (
-      <div className="flex space-y-4 flex-col h-full items-center justify-center">
-        <div className="flex flex-col justify-center items-center h-40 w-40 border rounded-full bg-zinc-900">
-          <Image src="/logo__2_-removebg-preview.png" alt="Logo" width={64} height={64} className="object-contain" />
-        </div>
+      <div className="flex flex-col h-full items-center justify-center bg-black gap-8">
+        {/* Logo */}
+        <Image
+          src="/logo__2_-removebg-preview.png"
+          alt="Logo"
+          width={80}
+          height={80}
+          className="object-contain"
+        />
 
-
-        <div className="bg-zinc-900 p-4 rounded-lg space-y-2">
-          <div className="flex justify-between items-center gap-8">
-            <kbd className="px-2 py-1 bg-zinc-800 text-indigo-400 text-sm rounded border">Ctrl+G</kbd>
-            <span className="text-zinc-400 font-semibold">New Request</span>
+        {/* Keyboard shortcuts — no card bg */}
+        <div className="space-y-3" style={{ minWidth: 240 }}>
+          <div className="flex items-center justify-between gap-10">
+            <kbd
+              className="px-2.5 py-1 rounded-md text-[12px] font-mono font-medium"
+              style={{
+                background: "rgba(99,102,241,0.12)",
+                color: "#818cf8",
+                border: "1px solid rgba(99,102,241,0.2)",
+                letterSpacing: "0.03em",
+              }}
+            >
+              Ctrl+G
+            </kbd>
+            <span className="text-white font-semibold text-[14px]">New Request</span>
           </div>
-          <div className="flex justify-between items-center gap-8">
-            <kbd className="px-2 py-1 bg-zinc-800 text-indigo-400 text-sm rounded border">Ctrl+S</kbd>
-            <span className="text-zinc-400 font-semibold">Save Request</span>
+          <div className="flex items-center justify-between gap-10">
+            <kbd
+              className="px-2.5 py-1 rounded-md text-[12px] font-mono font-medium"
+              style={{
+                background: "rgba(99,102,241,0.12)",
+                color: "#818cf8",
+                border: "1px solid rgba(99,102,241,0.2)",
+                letterSpacing: "0.03em",
+              }}
+            >
+              Ctrl+S
+            </kbd>
+            <span className="text-white font-semibold text-[14px]">Save Request</span>
           </div>
         </div>
       </div>
