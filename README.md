@@ -2,7 +2,7 @@
 
 **Httply** is a modern, collaborative API development client built for teams who ship fast. Designed as a lightweight, web-first alternative to tools like Postman or Insomnia, Httply allows developers to test, debug, and share APIs seamlessly from the browser.
 
-                 ![Httply Logo](/public/logo__2_-removebg-preview.png)
+![Httply Logo](/public/logo__2_-removebg-preview.png)
 
 ---
 
