@@ -1,6 +1,7 @@
 "use client"
 import { signIn } from '@/lib/auth-client'
 import { FaGoogle, FaGithub } from "react-icons/fa";
+import { BsShieldLock } from "react-icons/bs";
 import Image from 'next/image'
 import React, { useState, useEffect } from 'react'
 import { Spinner } from '@/components/ui/spinner'
@@ -15,102 +16,132 @@ const LoginPage = () => {
     }, []);
 
     return (
-        <main className="relative flex w-full min-h-screen items-center justify-center px-4 font-sans selection:bg-blue-500/30">
-            {/* Custom Background */}
+        <main className="relative flex w-full min-h-screen items-center justify-center px-4" style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
             <LoginBackground />
 
-            {/* Global Loading Overlay */}
+            {/* Loading Overlay */}
             {loading !== null && (
-                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0F172A]/80 backdrop-blur-md transition-opacity duration-300">
-                    <Spinner className="h-12 w-12 text-[#F8FAFC] mb-4" />
-                    <p className="text-lg font-medium text-[#F8FAFC]">Authenticating...</p>
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <Spinner className="h-8 w-8 text-white mb-3" />
+                    <p className="text-sm text-white/60 tracking-wide">Signing you in...</p>
                 </div>
             )}
 
-            {/* Glassmorphism Login Card */}
-            <section 
-                className={`w-full max-w-[420px] rounded-[20px] p-8 md:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border transition-all duration-700 ease-out flex flex-col items-center text-center ${
-                    mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            {/* Card */}
+            <div
+                className={`relative w-full max-w-[380px] transition-all duration-500 ease-out ${
+                    mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                 }`}
-                style={{
-                    backgroundColor: "rgba(17, 24, 39, 0.85)", // Dark glass bg
-                    borderColor: "rgba(255, 255, 255, 0.08)", // Subtle white border
-                }}
             >
-                {/* Header Section */}
-                <div className="mb-8 flex flex-col items-center">
-                    <Image src="/logo__2_-removebg-preview.png" alt="Httply Logo" width={64} height={64} className="object-contain mb-6" />
-                    <h1 className="text-2xl md:text-[28px] font-bold text-[#F8FAFC] tracking-tight mb-2">
-                        Welcome to Httply
-                    </h1>
-                    <p className="text-[15px] text-[#94A3B8] leading-relaxed max-w-[280px]">
-                        Test, debug, and collaborate on APIs from one place.
-                    </p>
-                </div>
+                {/* Thin top accent line */}
+                <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-orange-400/60 to-transparent" />
 
-                {/* Authentication Buttons */}
-                <div className="w-full space-y-3">
-                    <button
-                        disabled={loading !== null}
-                        onClick={async () => {
-                            setLoading('google')
-                            await signIn.social({
-                                provider: 'google',
-                                callbackURL: "/"
-                            })
-                            setLoading(null)
-                        }}
-                        className="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-[#F8FAFC] px-4 py-3.5 text-[15px] font-semibold text-[#0F172A] shadow-sm transition-all duration-200 hover:bg-white hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(255,255,255,0.1)] focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-70 disabled:hover:scale-100"
-                    >
-                        {loading === 'google' ? (
-                            <Spinner className="h-5 w-5 text-[#0F172A]" />
-                        ) : (
-                            <FaGoogle className="h-4 w-4 text-[#0F172A]" />
-                        )}
-                        Continue with Google
-                    </button>
+                <div
+                    className="rounded-2xl border px-8 py-9"
+                    style={{
+                        background: "rgba(10, 10, 10, 0.92)",
+                        borderColor: "rgba(255,255,255,0.07)",
+                        boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 48px rgba(0,0,0,0.6)",
+                    }}
+                >
+                    {/* Logo + Brand */}
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="relative mb-5">
+                            <div className="absolute inset-0 rounded-xl bg-orange-400/10 blur-xl scale-150" />
+                            <Image
+                                src="/logo__2_-removebg-preview.png"
+                                alt="Httply Logo"
+                                width={44}
+                                height={44}
+                                className="relative object-contain"
+                            />
+                        </div>
 
-                    <button
-                        disabled={loading !== null}
-                        onClick={async () => {
-                            setLoading('github')
-                            await signIn.social({
-                                provider: 'github',
-                                callbackURL: "/"
-                            })
-                            setLoading(null)
-                        }}
-                        className="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] px-4 py-3.5 text-[15px] font-semibold text-[#F8FAFC] shadow-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.08)] hover:scale-[1.02] hover:border-[rgba(255,255,255,0.15)] focus:outline-none focus:ring-2 focus:ring-zinc-500/50 disabled:opacity-70 disabled:hover:scale-100"
-                    >
-                        {loading === 'github' ? (
-                            <Spinner className="h-5 w-5 text-[#F8FAFC]" />
-                        ) : (
-                            <FaGithub className="h-[18px] w-[18px] text-[#F8FAFC]" />
-                        )}
-                        Continue with GitHub
-                    </button>
-                </div>
-
-                {/* Divider */}
-                <div className="relative my-8 w-full">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-[rgba(255,255,255,0.08)]"></div>
+                        <h1 className="text-[22px] font-semibold text-white tracking-[-0.3px] mb-1.5">
+                            Sign in to Httply
+                        </h1>
+                        <p className="text-[13px] text-white/40 leading-relaxed text-center whitespace-nowrap">
+                            The API client built for teams who ship fast.
+                        </p>
                     </div>
-                    <div className="relative flex justify-center text-xs">
-                        <span className="bg-[#111827] px-3 text-[#94A3B8]">or</span>
+
+                    {/* Buttons */}
+                    <div className="space-y-2.5">
+                        {/* Google */}
+                        <button
+                            disabled={loading !== null}
+                            onClick={async () => {
+                                setLoading('google');
+                                await signIn.social({ provider: 'google', callbackURL: "/" });
+                                setLoading(null);
+                            }}
+                            className="relative w-full flex items-center justify-center gap-3 rounded-xl px-4 py-2.5 text-[13.5px] font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                            style={{
+                                background: "rgba(255,255,255,0.95)",
+                                color: "#111",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)",
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "#fff")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.95)")}
+                        >
+                            {loading === 'google' ? (
+                                <Spinner className="h-4 w-4 text-black" />
+                            ) : (
+                                <FaGoogle className="h-3.5 w-3.5 text-[#111]" />
+                            )}
+                            Continue with Google
+                        </button>
+
+                        {/* GitHub */}
+                        <button
+                            disabled={loading !== null}
+                            onClick={async () => {
+                                setLoading('github');
+                                await signIn.social({ provider: 'github', callbackURL: "/" });
+                                setLoading(null);
+                            }}
+                            className="relative w-full flex items-center justify-center gap-3 rounded-xl px-4 py-2.5 text-[13.5px] font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                            style={{
+                                background: "rgba(255,255,255,0.04)",
+                                color: "rgba(255,255,255,0.85)",
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                        >
+                            {loading === 'github' ? (
+                                <Spinner className="h-4 w-4 text-white" />
+                            ) : (
+                                <FaGithub className="h-4 w-4 text-white/80" />
+                            )}
+                            Continue with GitHub
+                        </button>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative flex items-center gap-3 my-7">
+                        <div className="flex-1 h-px bg-white/6" />
+                        <span className="text-[11px] text-white/20 tracking-wider uppercase">Secure sign-in</span>
+                        <div className="flex-1 h-px bg-white/6" />
+                    </div>
+
+                    {/* Security note */}
+                    <div className="flex items-center justify-center gap-2">
+                        <BsShieldLock className="w-3 h-3 text-white/20" />
+                        <p className="text-[11.5px] text-white/25 text-center leading-relaxed">
+                            By signing in, you agree to our{" "}
+                            <span className="text-white/40 hover:text-white/60 cursor-pointer transition-colors underline underline-offset-2">
+                                Terms
+                            </span>{" "}
+                            &{" "}
+                            <span className="text-white/40 hover:text-white/60 cursor-pointer transition-colors underline underline-offset-2">
+                                Privacy Policy
+                            </span>
+                        </p>
                     </div>
                 </div>
-
-                {/* Footer Section */}
-                <div className="flex flex-col items-center gap-6 w-full">
-                    <p className="text-[14px] text-[#F8FAFC] font-medium">
-                        Sign in securely using your developer account.
-                    </p>
-                    <p className="text-[12px] text-[#94A3B8] text-center max-w-[260px] leading-relaxed">
-                        By continuing, you agree to the Terms of Service and Privacy Policy.
-                    </p>
-                </div>
-            </section>
+            </div>
         </main>
     )
 }

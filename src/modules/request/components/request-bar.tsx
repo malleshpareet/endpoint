@@ -18,6 +18,7 @@ import { useWorkspaceStore } from '@/modules/layout/stores'
 
 import { Box } from 'lucide-react'
 import { useEnvironments } from '@/modules/environments/hooks/environments'
+import { parseCurl } from '../utils/curl-parser'
 
 interface Props {
   tab: RequestTab,
@@ -50,6 +51,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         headers: safeParse(tab.headers),
         parameters: safeParse(tab.parameters),
         body: safeParse(tab.body, null),
+        authorization: tab.authorization,
         environmentId: activeEnvironmentId,
         workspaceId: selectedWorkspace?.id,
         collectionId: tab.collectionId
@@ -57,9 +59,37 @@ const RequestBar = ({ tab, updateTab }: Props) => {
 
       toast.success('Request sent successfully!');
     } catch (error) {
-      toast.error('Failed to send request.');
+      toast.error('Failed to send request');
     }
   }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text");
+    if (text.trim().startsWith("curl ")) {
+      const parsed = parseCurl(text);
+      if (parsed) {
+        e.preventDefault();
+        
+        let existingHeaders = [];
+        try { existingHeaders = tab.headers ? JSON.parse(tab.headers) : []; } catch (e) {}
+        
+        const newHeaders = parsed.headers.map(h => ({ key: h.key, value: h.value, enabled: true }));
+        const combinedHeaders = [
+          ...existingHeaders.filter((eh: any) => !newHeaders.find(nh => nh.key.toLowerCase() === eh.key.toLowerCase())), 
+          ...newHeaders
+        ];
+
+        updateTab(tab.id, {
+          url: parsed.url,
+          method: parsed.method as any,
+          headers: JSON.stringify(combinedHeaders),
+          body: parsed.body || tab.body
+        });
+        toast.success("Imported cURL command!");
+      }
+    }
+  };
+
 
   return (
     <div className='flex flex-row items-center justify-between bg-zinc-900 rounded-md px-2 py-2 w-full'>
@@ -84,7 +114,8 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         <VariableInput
           value={tab.url || ''}
           onChange={(e) => updateTab(tab.id, { url: e.target.value })}
-          placeholder="Enter URL"
+          onPaste={handlePaste}
+          placeholder="Enter URL (Paste a cURL command here!)"
           className="flex-1 bg-zinc-800 rounded-md border border-zinc-700"
         />
       </div>

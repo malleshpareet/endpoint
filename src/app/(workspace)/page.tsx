@@ -35,8 +35,8 @@ return (
 
     <ResizableHandle withHandle />
 
-    <ResizablePanel defaultSize={35} maxSize={40} minSize={25} className="flex">
-      <div className="flex-1">
+    <ResizablePanel defaultSize={35} maxSize={40} minSize={25} className="flex overflow-hidden">
+      <div className="flex-1 min-w-0 overflow-hidden">
         <TabbedSidebar currentWorkspace={currentWorkspace} />
       </div>
     </ResizablePanel>

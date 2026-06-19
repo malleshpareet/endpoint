@@ -17,14 +17,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Hint } from "@/components/ui/hint";
 import { useWorkspaceStore } from "../stores";
-import { useGenerateWorkspaceInvite, useGetWorkspaceMemebers } from "@/modules/invites/hooks/invites";
+import { useInviteUserByEmail, useGetWorkspaceMemebers } from "@/modules/invites/hooks/invites";
 import { useSession } from "@/lib/auth-client";
 
 const InviteMember = () => {
-  const [inviteLink, setInviteLink] = useState("");
+  const [email, setEmail] = useState("");
   const { selectedWorkspace } = useWorkspaceStore();
 
-  const { mutateAsync, isPending } = useGenerateWorkspaceInvite(
+  const { mutateAsync, isPending } = useInviteUserByEmail(
     selectedWorkspace?.id || ""
   );
 
@@ -49,24 +49,21 @@ const InviteMember = () => {
   const currentUserMember = workspaceMembers?.find((m: any) => m.user.id === session?.user?.id);
   const isCurrentUserAdmin = currentUserMember?.role === 'ADMIN';
 
-  const generateInviteLink = async () => {
+  const handleSendInvite = async () => {
     if (!selectedWorkspace?.id) {
       toast.error("Please select a workspace first");
       return;
     }
-    try {
-      const response = await mutateAsync();
-      setInviteLink(response || "");
-      toast.success("Invite link generated!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to generate invite link");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
     }
-  };
-
-  const copyToClipboard = async () => {
-    if (inviteLink) {
-      await navigator.clipboard.writeText(inviteLink);
-      toast.success("Invite link copied to clipboard");
+    try {
+      await mutateAsync(email);
+      toast.success(`Invite sent to ${email}`);
+      setEmail("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send invite");
     }
   };
 
@@ -103,32 +100,23 @@ const InviteMember = () => {
             )}
           </div>
 
-          {/* Invite Link Input */}
-          <div className="flex gap-2 items-center">
+          {/* Invite Email Input */}
+          <div className="flex flex-col gap-3 mt-4">
             <Input
-              value={inviteLink}
-              placeholder="Generate an invite link..."
-              readOnly
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address..."
+              type="email"
             />
             <Button
-              variant="outline"
-              size="icon"
-              onClick={copyToClipboard}
-              disabled={!inviteLink}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+              onClick={handleSendInvite}
+              disabled={isPending || !email}
             >
-              <Copy className="h-4 w-4" />
+              <LinkIcon className="h-4 w-4 mr-2" />
+              {isPending ? "Sending..." : "Send Invite"}
             </Button>
           </div>
-
-          {/* Generate Button */}
-          <Button
-            className="mt-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white"
-            onClick={generateInviteLink}
-            disabled={isPending}
-          >
-            <LinkIcon className="h-4 w-4 mr-2" />
-            {isPending ? "Generating..." : "Generate Link"}
-          </Button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

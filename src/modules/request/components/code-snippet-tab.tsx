@@ -74,6 +74,35 @@ const CodeSnippetTab = () => {
             .filter((h: any) => h.key && h.value)
             .map((h: any) => ({ key: resolveVariable(h.key), value: resolveVariable(h.value) }));
 
+        try {
+            if (activeTab.authorization) {
+                const authData = JSON.parse(activeTab.authorization);
+                if (authData.type === 'bearer' && authData.token) {
+                    validHeaders.push({ key: 'Authorization', value: `Bearer ${resolveVariable(authData.token)}` });
+                } else if (authData.type === 'jwt' && authData.token) {
+                    validHeaders.push({ key: 'Authorization', value: `Bearer ${resolveVariable(authData.token)}` });
+                } else if (authData.type === 'oauth2' && authData.token) {
+                    const prefix = resolveVariable(authData.headerPrefix || 'Bearer');
+                    validHeaders.push({ key: 'Authorization', value: `${prefix} ${resolveVariable(authData.token)}` });
+                } else if (authData.type === 'basic' && authData.username) {
+                    const uname = resolveVariable(authData.username);
+                    const pwd = resolveVariable(authData.password || '');
+                    const encoded = btoa(`${uname}:${pwd}`);
+                    validHeaders.push({ key: 'Authorization', value: `Basic ${encoded}` });
+                } else if (authData.type === 'apikey' && authData.key && authData.value) {
+                    const resolvedKey = resolveVariable(authData.key);
+                    const resolvedVal = resolveVariable(authData.value);
+                    if (authData.addTo === 'queryParams') {
+                        params.push({ key: resolvedKey, value: resolvedVal });
+                    } else {
+                        validHeaders.push({ key: resolvedKey, value: resolvedVal });
+                    }
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
         const validParams = params.filter((p: any) => p.key && p.value);
         if (validParams.length > 0) {
             const queryString = validParams

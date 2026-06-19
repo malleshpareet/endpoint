@@ -93,6 +93,7 @@ export async function createWorkspace(name: string) {
 
 
 export const getWorkspaceById = async (id: string) => {
+    if (!id) return null;
     const workspace = await db.workspace.findUnique({
         where: { id },
         include: {

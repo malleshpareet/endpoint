@@ -5,6 +5,107 @@ import { REST_METHOD } from "@prisma/client";
 import { verifyWorkspaceRole } from "@/modules/workspace/actions/permissions";
 
 import axios, { AxiosRequestConfig } from "axios";
+import aws4 from "aws4";
+import hawk from "hawk";
+import crypto from "crypto";
+const OAuth = require("oauth-1.0a");
+
+function applyAuthorization(requestConfig: any, authorizationStr: string | null | undefined, finalVariables: any[], resolveStr: (s: string, vars: any[]) => string) {
+  if (!authorizationStr) return;
+  try {
+    const authData = JSON.parse(authorizationStr);
+    const type = authData.type;
+
+    if (type === 'bearer' && authData.token) {
+      requestConfig.headers['Authorization'] = `Bearer ${resolveStr(authData.token, finalVariables)}`;
+    } else if (type === 'jwt' && authData.token) {
+      requestConfig.headers['Authorization'] = `Bearer ${resolveStr(authData.token, finalVariables)}`;
+    } else if (type === 'oauth2' && authData.token) {
+      const prefix = resolveStr(authData.headerPrefix || 'Bearer', finalVariables);
+      requestConfig.headers['Authorization'] = `${prefix} ${resolveStr(authData.token, finalVariables)}`;
+    } else if (type === 'basic' && authData.username) {
+      const uname = resolveStr(authData.username, finalVariables);
+      const pwd = resolveStr(authData.password || '', finalVariables);
+      requestConfig.headers['Authorization'] = `Basic ${Buffer.from(`${uname}:${pwd}`).toString('base64')}`;
+    } else if (type === 'apikey' && authData.key && authData.value) {
+      const key = resolveStr(authData.key, finalVariables);
+      const value = resolveStr(authData.value, finalVariables);
+      if (authData.addTo === 'queryParams') {
+        if (!requestConfig.params) requestConfig.params = {};
+        requestConfig.params[key] = value;
+      } else {
+        requestConfig.headers[key] = value;
+      }
+    } else if (type === 'aws') {
+      const opts = {
+        host: new URL(requestConfig.url).host,
+        path: new URL(requestConfig.url).pathname + new URL(requestConfig.url).search,
+        service: resolveStr(authData.serviceName || '', finalVariables) || 'execute-api',
+        region: resolveStr(authData.awsRegion || '', finalVariables) || 'us-east-1',
+        method: requestConfig.method,
+        body: requestConfig.body ? (typeof requestConfig.body === 'string' ? requestConfig.body : JSON.stringify(requestConfig.body)) : '',
+        headers: { ...requestConfig.headers }
+      };
+      const credentials = {
+        accessKeyId: resolveStr(authData.accessKey || '', finalVariables),
+        secretAccessKey: resolveStr(authData.secretKey || '', finalVariables),
+        sessionToken: authData.sessionToken ? resolveStr(authData.sessionToken, finalVariables) : undefined
+      };
+      aws4.sign(opts, credentials);
+      Object.assign(requestConfig.headers, opts.headers);
+    } else if (type === 'hawk') {
+      const url = requestConfig.url;
+      const method = requestConfig.method;
+      const credentials = {
+        id: resolveStr(authData.authId || '', finalVariables),
+        key: resolveStr(authData.authKey || '', finalVariables),
+        algorithm: resolveStr(authData.algorithm || 'sha256', finalVariables)
+      };
+      
+      const hawkOpts: any = { credentials };
+      if (requestConfig.body) {
+         hawkOpts.payload = typeof requestConfig.body === 'string' ? requestConfig.body : JSON.stringify(requestConfig.body);
+         hawkOpts.contentType = requestConfig.headers['Content-Type'] || requestConfig.headers['content-type'] || 'text/plain';
+      }
+      if (authData.ext) hawkOpts.ext = resolveStr(authData.ext, finalVariables);
+      if (authData.app) hawkOpts.app = resolveStr(authData.app, finalVariables);
+      if (authData.dlg) hawkOpts.dlg = resolveStr(authData.dlg, finalVariables);
+
+      const header = hawk.client.header(url, method, hawkOpts);
+      requestConfig.headers['Authorization'] = header.header;
+    } else if (type === 'oauth1') {
+      const oauth = new OAuth({
+        consumer: {
+          key: resolveStr(authData.consumerKey || '', finalVariables),
+          secret: resolveStr(authData.consumerSecret || '', finalVariables),
+        },
+        signature_method: resolveStr(authData.signatureMethod || 'HMAC-SHA1', finalVariables),
+        hash_function(base_string: string, key: string) {
+          if (authData.signatureMethod === 'HMAC-SHA256') {
+             return crypto.createHmac('sha256', key).update(base_string).digest('base64');
+          }
+          return crypto.createHmac('sha1', key).update(base_string).digest('base64');
+        },
+      });
+
+      const request_data = {
+        url: requestConfig.url,
+        method: requestConfig.method,
+        data: requestConfig.params || {}
+      };
+      
+      const token = {
+        key: resolveStr(authData.token || '', finalVariables),
+        secret: resolveStr(authData.tokenSecret || '', finalVariables),
+      };
+
+      const authHeader = oauth.toHeader(oauth.authorize(request_data, token));
+      requestConfig.headers['Authorization'] = authHeader['Authorization'];
+    }
+  } catch (e) {
+    console.error("Auth apply error:", e);
+  }
+}
 
 export type Request = {
   name: string;
@@ -13,6 +114,7 @@ export type Request = {
   body?: string;
   headers?: string;
   parameters?: string;
+  authorization?: string;
 };
 
 
@@ -30,6 +132,7 @@ export const addRequestToCollection = async (collectionId: string, value: Reques
       body: value.body,
       headers: value.headers,
       parameters: value.parameters,
+      authorization: value.authorization,
     }
   });
 
@@ -55,6 +158,7 @@ export const saveRequest = async (id: string, value: Request) => {
       body: value.body,
       headers: value.headers,
       parameters: value.parameters,
+      authorization: value.authorization,
     },
   });
 
@@ -236,10 +340,12 @@ export async function run(requestId: string, environmentId?: string, localVariab
     const requestConfig = {
       method: request.method,
       url: resolveString(request.url, finalVariables),
-      headers: parseKeyValueArray(resolveObject(request.headers, finalVariables)),
+      headers: parseKeyValueArray(resolveObject(request.headers, finalVariables)) || {},
       params: parseKeyValueArray(resolveObject(request.parameters, finalVariables)),
       body: resolveObject(request.body || undefined, finalVariables)
     };
+
+    applyAuthorization(requestConfig, request.authorization as string, finalVariables, resolveString);
 
     const result = await sendRequest(requestConfig);
 
@@ -307,6 +413,7 @@ export async function runDirect(requestData: {
   headers?: Record<string, string>;
   parameters?: Record<string, any>;
   body?: any;
+  authorization?: string;
   environmentId?: string | null;
   workspaceId?: string;
   collectionId?: string;
@@ -349,10 +456,12 @@ export async function runDirect(requestData: {
     const requestConfig = {
       method: requestData.method,
       url: resolveString(requestData.url, finalVariables),
-      headers: parseKeyValueArray(resolveObject(requestData.headers, finalVariables)),
+      headers: parseKeyValueArray(resolveObject(requestData.headers, finalVariables)) || {},
       params: parseKeyValueArray(resolveObject(requestData.parameters, finalVariables)),
       body: resolveObject(requestData.body, finalVariables)
     };
+
+    applyAuthorization(requestConfig, requestData.authorization, finalVariables, resolveString);
 
     const result = await sendRequest(requestConfig);
 
