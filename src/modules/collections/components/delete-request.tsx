@@ -30,8 +30,8 @@ const DeleteRequestModal = ({
       }
 
       setIsModalOpen(false);
-    } catch (err) {
-      toast.error("Failed to delete request");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete request");
       console.error("Failed to delete request:", err);
     }
   };

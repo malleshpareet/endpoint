@@ -24,7 +24,11 @@ export function useDeleteCollection(collectionId:string){
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn:async () => deleteCollection(collectionId),
+    mutationFn: async () => {
+      const res = await deleteCollection(collectionId);
+      if (res?.error) throw new Error(res.error);
+      return res;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
     }

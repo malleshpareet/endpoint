@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Hint } from "@/components/ui/hint";
 import { useWorkspaceStore } from "../stores";
 import { useGenerateWorkspaceInvite, useGetWorkspaceMemebers } from "@/modules/invites/hooks/invites";
+import { useSession } from "@/lib/auth-client";
 
 const InviteMember = () => {
   const [inviteLink, setInviteLink] = useState("");
@@ -31,6 +32,8 @@ const InviteMember = () => {
     selectedWorkspace?.id || ""
   );
 
+  const { data: session } = useSession();
+
   if (selectedWorkspace?.name === "Personal Workspace") {
     return (
       <Hint label="Cannot invite to Personal Workspace">
@@ -43,7 +46,8 @@ const InviteMember = () => {
     );
   }
 
-  //   console.log("Selected Workspace members: ", workspaceMembers);
+  const currentUserMember = workspaceMembers?.find((m: any) => m.user.id === session?.user?.id);
+  const isCurrentUserAdmin = currentUserMember?.role === 'ADMIN';
 
   const generateInviteLink = async () => {
     if (!selectedWorkspace?.id) {
@@ -52,10 +56,10 @@ const InviteMember = () => {
     }
     try {
       const response = await mutateAsync();
-      setInviteLink(response);
+      setInviteLink(response || "");
       toast.success("Invite link generated!");
-    } catch (error) {
-      toast.error("Failed to generate invite link");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to generate invite link");
     }
   };
 

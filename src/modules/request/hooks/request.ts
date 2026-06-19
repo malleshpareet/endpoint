@@ -78,7 +78,11 @@ export function useDeleteRequest(requestId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => deleteRequest(requestId),
+    mutationFn: async () => {
+      const res = await deleteRequest(requestId);
+      if (res?.error) throw new Error(res.error);
+      return res;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
     },

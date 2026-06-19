@@ -1,10 +1,9 @@
 "use server";
 
 import db from "@/lib/db";
+import { verifyWorkspaceRole } from "@/modules/workspace/actions/permissions";export const createCollection = async (workspaceId: string, name: string) => {
+  await verifyWorkspaceRole(workspaceId, ['ADMIN', 'EDITOR']);
 
-
-
-export const createCollection = async (workspaceId: string, name: string) => {
   const collection = await db.collection.create({
     data: {
       name,
@@ -31,14 +30,27 @@ export const getCollections = async (workspaceId: string) => {
 
 
 export const deleteCollection = async (collectionId: string) => {
-  await db.collection.delete({
-    where: {
-      id: collectionId,
-    },
-  });
+  try {
+    const collection = await db.collection.findUnique({ where: { id: collectionId } });
+    if (!collection) throw new Error("Collection not found");
+    await verifyWorkspaceRole(collection.workspaceId, ['ADMIN']);
+
+    await db.collection.delete({
+      where: {
+        id: collectionId,
+      },
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 };
 
 export const editCollection = async (collectionId: string, name: string, variables?: any) => {
+  const collection = await db.collection.findUnique({ where: { id: collectionId } });
+  if (!collection) throw new Error("Collection not found");
+  await verifyWorkspaceRole(collection.workspaceId, ['ADMIN', 'EDITOR']);
+
   const data: any = { name };
   if (variables !== undefined) {
     data.variables = variables;
