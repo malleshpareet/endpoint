@@ -8,6 +8,8 @@ import CollectionFolder from './collection-folder';
 import EnvironmentsTab from '@/modules/environments/components/environments-tab';
 import { HistoryTab } from '@/modules/request/components/history-tab';
 import { MembersTab } from '@/modules/workspace/components/members-tab';
+import { useRequestPlaygroundStore } from '@/modules/request/store/useRequestStore';
+import CodeSnippetTab from '@/modules/request/components/code-snippet-tab';
 
 
 interface Props {
@@ -22,6 +24,8 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
 
 
 
+    const { activeTabId } = useRequestPlaygroundStore();
+
     if (isPending) return (
         <div className="flex-1 flex items-center justify-center">
             <Loader className="w-6 h-6 text-indigo-400 animate-spin" />
@@ -33,8 +37,11 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
         { icon: Box, label: 'Environments' },
         { icon: Clock, label: 'History' },
         { icon: Users, label: 'Team' },
-        { icon: Code, label: 'Code' }
     ];
+
+    if (activeTabId) {
+        sidebarItems.push({ icon: Code, label: 'Code' });
+    }
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -99,6 +106,9 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
 
             case 'Team':
                 return <MembersTab workspaceId={currentWorkspace?.id} />;
+
+            case 'Code':
+                return <CodeSnippetTab />;
             default:
                 return <div className="p-4 text-zinc-400">Select a tab to view content</div>;
         }

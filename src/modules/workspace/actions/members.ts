@@ -75,3 +75,39 @@ export async function updateWorkspaceMemberRole(workspaceId: string, memberId: s
     return { success: false, error: error.message || "Failed to update role" };
   }
 }
+
+export async function removeWorkspaceMember(workspaceId: string, memberId: string) {
+  try {
+    const user = await currentUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const currentUserMembership = await db.workspaceMember.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId: user.id,
+          workspaceId: workspaceId
+        }
+      }
+    });
+
+    if (!currentUserMembership || currentUserMembership.role !== 'ADMIN') {
+      throw new Error("Only workspace Admins can remove members.");
+    }
+
+    if (currentUserMembership.id === memberId) {
+      throw new Error("You cannot remove yourself.");
+    }
+
+    await db.workspaceMember.delete({
+      where: {
+        id: memberId,
+        workspaceId: workspaceId
+      }
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error removing member:", error);
+    return { success: false, error: error.message || "Failed to remove member" };
+  }
+}
