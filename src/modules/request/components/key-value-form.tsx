@@ -109,15 +109,6 @@ const KeyValueFormEditor: React.FC<KeyValueFormEditorProps> = ({
       )
       .map(({ key, value }) => ({ key, value }));
 
-  // Simple debounce implementation
-  const debounce = (fn: (...args: any[]) => void, wait = 500) => {
-    let t: ReturnType<typeof setTimeout> | null = null;
-    return (...args: any[]) => {
-      if (t) clearTimeout(t);
-      t = setTimeout(() => fn(...args), wait);
-    };
-  };
-
   const saveIfChanged = useCallback(
     (items: KeyValueItem[]) => {
       const filtered = getFilteredItemsFromValues(items);
@@ -130,30 +121,15 @@ const KeyValueFormEditor: React.FC<KeyValueFormEditorProps> = ({
     [onSubmit]
   );
 
-  const debouncedSaveRef = useRef(saveIfChanged);
-  // keep ref up to date when saveIfChanged changes
-  useEffect(() => {
-    debouncedSaveRef.current = saveIfChanged;
-  }, [saveIfChanged]);
-
-  const debouncedInvokerRef = useRef<((items: KeyValueItem[]) => void) | null>(
-    null
-  );
-  useEffect(() => {
-    debouncedInvokerRef.current = debounce((items: KeyValueItem[]) => {
-      debouncedSaveRef.current(items);
-    }, 500);
-  }, []);
-
-  // Watch form values and trigger debounced save
+  // Watch form values and trigger save immediately
   useEffect(() => {
     const subscription = form.watch((value) => {
       const items = (value as KeyValueFormData)?.items || [];
-      debouncedInvokerRef.current?.(items as KeyValueItem[]);
+      saveIfChanged(items as KeyValueItem[]);
     });
 
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, saveIfChanged]);
 
   return (
     <div className={cn("w-full", className)}>

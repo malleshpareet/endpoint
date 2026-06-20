@@ -1,5 +1,5 @@
-import { EllipsisVertical, FilePlus, Folder, Trash, Edit, ChevronDown, ChevronRight, Loader } from 'lucide-react';
-import React, { useState } from 'react';
+import { EllipsisVertical, FilePlus, Folder, Trash, Edit, ChevronDown, ChevronRight, Loader, Upload, Download } from 'lucide-react';
+import React, { useState, useRef } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,10 @@ import DeleteRequestModal from './delete-request';
 import { useGetAllRequestFromCollection } from '@/modules/request/hooks/request';
 import { REST_METHOD } from '@prisma/client';
 import { useRequestPlaygroundStore } from '@/modules/request/store/useRequestStore';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { parsePostmanCollection, exportToPostmanCollection } from '@/lib/httply-parser';
+import { importToExistingCollectionAction } from '../actions';
 
 interface Props {
   collection: {
@@ -38,9 +42,73 @@ const CollectionFolder = ({ collection }: Props) => {
   const [requestToEdit, setRequestToEdit] = useState<{ id: string; name: string } | null>(null);
   const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const queryClient = useQueryClient();
+
   const { data: requestData, isPending, isError } = useGetAllRequestFromCollection(collection.id);
 
   const { openRequestTab } = useRequestPlaygroundStore();
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    
+    reader.onload = async (event) => {
+        try {
+            const jsonString = event.target?.result as string;
+            const parsedCollection = parsePostmanCollection(jsonString);
+            
+            const toastId = toast.loading(`Importing ${parsedCollection.requests.length} requests into ${collection.name}...`);
+            
+            const result = await importToExistingCollectionAction(collection.id, parsedCollection);
+            
+            if (result.success) {
+                toast.success(`Successfully added ${result.count} requests!`, { id: toastId });
+                queryClient.invalidateQueries();
+                setIsCollapsed(true); // Auto-expand
+            } else {
+                toast.error(`Import failed: ${result.error}`, { id: toastId });
+            }
+        } catch (error: any) {
+            toast.error(`Invalid format: ${error.message}`);
+        } finally {
+            setIsImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+    
+    reader.readAsText(file);
+  };
+
+  const handleExportClick = () => {
+    if (!requestData || requestData.length === 0) {
+      toast.error("No requests to export in this collection.");
+      return;
+    }
+    try {
+      const postmanJson = exportToPostmanCollection(collection.name, requestData);
+      const blob = new Blob([JSON.stringify(postmanJson, null, 2)], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${collection.name}_httply.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${collection.name} successfully!`);
+    } catch (e: any) {
+      toast.error(`Failed to export collection: ${e.message}`);
+    }
+  };
 
   const requestColorMap: Record<REST_METHOD, string> = {
     [REST_METHOD.GET]: "text-green-500",
@@ -106,6 +174,22 @@ const CollectionFolder = ({ collection }: Props) => {
                       <span className='text-xs text-zinc-400 bg-zinc-700 px-1 rounded'>⌘R</span>
                     </div>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleImportClick} disabled={isImporting}>
+                    <div className='flex flex-row justify-between items-center w-full'>
+                      <div className='font-semibold flex justify-center items-center'>
+                        {isImporting ? <Loader className='text-indigo-400 mr-2 w-4 h-4 animate-spin' /> : <Upload className='text-indigo-400 mr-2 w-4 h-4' />}
+                        Import Requests
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportClick}>
+                    <div className='flex flex-row justify-between items-center w-full'>
+                      <div className='font-semibold flex justify-center items-center'>
+                        <Download className='text-indigo-400 mr-2 w-4 h-4' />
+                        Export Collection
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
                     <div className='flex flex-row justify-between items-center w-full'>
                       <div className='font-semibold flex justify-center items-center'>
@@ -126,6 +210,13 @@ const CollectionFolder = ({ collection }: Props) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <input 
+                  type="file" 
+                  accept=".json" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+              />
             </div>
           </div>
 
