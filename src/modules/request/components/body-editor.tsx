@@ -82,6 +82,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   // Handle editor value changes
   const handleEditorChange = (value?: string) => {
     form.setValue('body', value || '', { shouldValidate: true })
+    onSubmit({ contentType: form.getValues('contentType'), body: value || '' })
   }
 
   // Monaco decorations
@@ -226,7 +227,10 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(val: any) => {
+                          field.onChange(val);
+                          onSubmit({ contentType: val, body: form.getValues('body') });
+                        }}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -345,14 +349,6 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
               Lines: {bodyValue?.split('\n').length || 0} | 
               Characters: {bodyValue?.length || 0}
             </div>
-            <Button
-              type="button"
-              size="sm"
-              className="bg-indigo-400 hover:bg-indigo-500 text-white h-7"
-              onClick={() => form.handleSubmit(onSubmit)()}
-            >
-              Update Body
-            </Button>
           </div>
         </div>
       </Form>

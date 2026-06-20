@@ -25,7 +25,7 @@ export const sendInviteEmail = async (to: string, inviteLink: string, workspaceN
           <strong>${inviterName}</strong> has invited you to join their workspace <strong>${workspaceName}</strong>.
         </p>
         <p style="color: #555; line-height: 1.5;">
-          Click the button below to accept the invitation and join the workspace:
+          <strong>Important:</strong> Please ensure you are logged into your Httply account first, then click the button below to accept the invitation and join the workspace:
         </p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${inviteLink}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">

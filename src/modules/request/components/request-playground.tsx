@@ -34,7 +34,11 @@ export default function PlaygroundPage() {
     return {
       name: activeTab.title || "Untitled Request",
       method: (activeTab.method as REST_METHOD) || REST_METHOD.GET,
-      url: activeTab.url || " "
+      url: activeTab.url || " ",
+      body: activeTab.body,
+      headers: activeTab.headers,
+      parameters: activeTab.parameters,
+      authorization: activeTab.authorization,
     };
   };
 
@@ -59,6 +63,7 @@ export default function PlaygroundPage() {
             body: activeTab.body,
             headers: activeTab.headers,
             parameters: activeTab.parameters,
+            authorization: activeTab.authorization,
           });
           toast.success("Request updated");
         } catch (err) {

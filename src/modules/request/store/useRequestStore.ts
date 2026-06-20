@@ -133,6 +133,7 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         body: req.body,
         headers: req.headers,
         parameters: req.parameters,
+        authorization: typeof req.authorization === 'string' ? req.authorization : (req.authorization ? JSON.stringify(req.authorization) : undefined),
         requestId: req.id,
         collectionId: req.collectionId,
         workspaceId: req.workspaceId,
@@ -156,9 +157,10 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
             id: savedRequest.id, // ✅ Replace temporary id with saved one
             title: savedRequest.name,
             method: savedRequest.method,
-            body: savedRequest?.body,
-            headers: savedRequest?.headers,
-            parameters: savedRequest?.parameters,
+            body: typeof savedRequest?.body === 'string' ? savedRequest.body : (savedRequest?.body ? JSON.stringify(savedRequest.body) : ''),
+            headers: typeof savedRequest?.headers === 'string' ? savedRequest.headers : (savedRequest?.headers ? JSON.stringify(savedRequest.headers) : ''),
+            parameters: typeof savedRequest?.parameters === 'string' ? savedRequest.parameters : (savedRequest?.parameters ? JSON.stringify(savedRequest.parameters) : ''),
+            authorization: typeof savedRequest?.authorization === 'string' ? savedRequest.authorization : (savedRequest?.authorization ? JSON.stringify(savedRequest.authorization) : ''),
             url: savedRequest.url,
             unsavedChanges: false,
           }

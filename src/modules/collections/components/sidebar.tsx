@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Archive, Clock, Code, Share2, Users, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useCollections } from '@/modules/collections/hooks/collections';
 import CreateCollection from './create-collection';
 import EmptyCollections from './empty-collections';
@@ -11,6 +11,10 @@ import { MembersTab } from '@/modules/workspace/components/members-tab';
 import { useRequestPlaygroundStore } from '@/modules/request/store/useRequestStore';
 import CodeSnippetTab from '@/modules/request/components/code-snippet-tab';
 import { Hint } from '@/components/ui/hint';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { parsePostmanCollection } from '@/lib/httply-parser';
+import { importCollectionAction } from '../actions';
 
 
 interface Props {
@@ -20,9 +24,49 @@ interface Props {
 const TabbedSidebar = ({ currentWorkspace }: Props) => {
     const [activeTab, setActiveTab] = useState('Collections');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const queryClient = useQueryClient();
 
     const { data: collections, isPending, isError } = useCollections(currentWorkspace?.id);
     const { activeTabId } = useRequestPlaygroundStore();
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        const reader = new FileReader();
+        
+        reader.onload = async (event) => {
+            try {
+                const jsonString = event.target?.result as string;
+                const parsedCollection = parsePostmanCollection(jsonString);
+                
+                const toastId = toast.loading(`Importing ${parsedCollection.requests.length} requests...`);
+                
+                const result = await importCollectionAction(currentWorkspace?.id, parsedCollection);
+                
+                if (result.success) {
+                    toast.success(`Successfully imported ${result.count} requests!`, { id: toastId });
+                    queryClient.invalidateQueries({ queryKey: ["collections", currentWorkspace?.id] });
+                } else {
+                    toast.error(`Import failed: ${result.error}`, { id: toastId });
+                }
+            } catch (error: any) {
+                toast.error(`Invalid format: ${error.message}`);
+            } finally {
+                setIsImporting(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        
+        reader.readAsText(file);
+    };
 
     if (isPending) return (
         <div className="flex-1 flex items-center justify-center">
@@ -75,8 +119,8 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                             </div>
                         </div>
 
-                        {/* New button */}
-                        <div className="px-4 py-2 border-b border-white/[0.06]">
+                        {/* New & Import buttons */}
+                        <div className="px-4 py-2 border-b border-white/[0.06] flex items-center justify-between">
                             <button
                                 onClick={() => setIsModalOpen(true)}
                                 className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors py-1"
@@ -84,6 +128,21 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>New</span>
                             </button>
+                            <button
+                                onClick={handleImportClick}
+                                disabled={isImporting}
+                                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors py-1 disabled:opacity-50"
+                            >
+                                {isImporting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                                <span>Import</span>
+                            </button>
+                            <input 
+                                type="file" 
+                                accept=".json" 
+                                ref={fileInputRef} 
+                                onChange={handleFileChange} 
+                                className="hidden" 
+                            />
                         </div>
 
                         {/* Collections list */}
@@ -95,7 +154,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                                     </div>
                                 ))
                             ) : (
-                                <EmptyCollections />
+                                <EmptyCollections onImportClick={handleImportClick} />
                             )}
                         </div>
                     </div>

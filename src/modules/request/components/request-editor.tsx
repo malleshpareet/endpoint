@@ -20,7 +20,7 @@ export default function RequestEditor() {
       <RequestBar tab={activeTab} updateTab={updateTab} />
 
      <div className="flex flex-1 flex-col w-full justify-start mt-4 items-center ">
-       <RequestEditorArea tab={activeTab} updateTab={updateTab} />
+       <RequestEditorArea key={activeTab.id} tab={activeTab} updateTab={updateTab} />
      
      </div>
        {

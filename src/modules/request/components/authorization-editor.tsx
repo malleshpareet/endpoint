@@ -73,20 +73,16 @@ const AuthorizationEditor = ({ initialData, onSubmit }: Props) => {
     }
   });
 
-  // Debounce saving
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      onSubmit(JSON.stringify(authData));
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [authData, onSubmit]);
-
   const handleTypeChange = (value: AuthType) => {
-    setAuthData(prev => ({ ...prev, type: value }));
+    const next = { ...authData, type: value };
+    setAuthData(next);
+    onSubmit(JSON.stringify(next));
   };
 
   const updateField = (field: keyof AuthorizationData, value: string) => {
-    setAuthData(prev => ({ ...prev, [field]: value }));
+    const next = { ...authData, [field]: value };
+    setAuthData(next);
+    onSubmit(JSON.stringify(next));
   };
 
   const renderField = (label: string, field: keyof AuthorizationData, type: string = "text", placeholder: string = "") => (

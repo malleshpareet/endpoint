@@ -29,6 +29,10 @@ const SaveRequestToCollectionModal = ({
     name: string;
     method: REST_METHOD;
     url: string;
+    body?: string;
+    headers?: string;
+    parameters?: string;
+    authorization?: string;
   };
   initialName?: string;
   collectionId?: string
@@ -99,7 +103,11 @@ const SaveRequestToCollectionModal = ({
         url: requestUrl.trim(),
         method: requestMethod,
         name: requestName.trim(),
-      });
+        body: requestData?.body,
+        headers: requestData?.headers,
+        parameters: requestData?.parameters,
+        authorization: requestData?.authorization,
+      } as any);
 
       toast.success(`Request saved to "${selectedCollection?.name}" collection`);
       setIsModalOpen(false);
