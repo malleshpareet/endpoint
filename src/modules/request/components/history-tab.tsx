@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useWorkspaceHistory } from '../hooks/history';
 import { ChevronDown, ChevronRight, History } from 'lucide-react';
 import { useRequestPlaygroundStore } from '../store/useRequestStore';
+import { sanitizeString } from '@/lib/sanitize';
 
 function getGroupLabel(dateString: string) {
   const date = new Date(dateString);
@@ -114,9 +115,9 @@ export const HistoryTab = ({ workspaceId }: { workspaceId?: string }) => {
                         {/* URL — show resolved URL if available, else template */}
                         <span
                           className="truncate text-zinc-400 group-hover:text-zinc-200 flex-1 font-mono text-[11px] transition-colors"
-                          title={run.resolvedUrl || run.request.url}
+                          title={sanitizeString(run.resolvedUrl || run.request.url || '')}
                         >
-                          {run.resolvedUrl || run.request.url}
+                          {sanitizeString(run.resolvedUrl || run.request.url || '')}
                         </span>
                       </div>
                     ))}

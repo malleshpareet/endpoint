@@ -13,6 +13,7 @@ import {
     generateGoNativeSnippet, generatePhpCurlSnippet, generateSwiftUrlSessionSnippet, 
     generateDartHttpSnippet, RequestDetails 
 } from '@/modules/request/utils/snippet-generators';
+import { sanitizeString, sanitizeObject, sanitizeHeaders } from '@/lib/sanitize';
 
 const CodeSnippetTab = () => {
     const { activeTabId, tabs } = useRequestPlaygroundStore();
@@ -112,11 +113,22 @@ const CodeSnippetTab = () => {
             resolvedUrl += resolvedUrl.includes('?') ? `&${queryString}` : `?${queryString}`;
         }
 
+        const headersRecord = validHeaders.reduce((acc: any, h: any) => ({ ...acc, [h.key]: h.value }), {} as Record<string, string>);
+        const sanitizedHeadersRecord = sanitizeHeaders(headersRecord);
+        const sanitizedHeadersList = Object.entries(sanitizedHeadersRecord).map(([k, v]) => ({ key: k, value: v }));
+
+        let finalBodyContent = bodyContent;
+        if (typeof bodyContent === 'string' && bodyContent.trim().startsWith('{')) {
+             try { finalBodyContent = JSON.stringify(sanitizeObject(JSON.parse(bodyContent)), null, 2); } catch(e) { finalBodyContent = sanitizeString(bodyContent); }
+        } else {
+             finalBodyContent = typeof bodyContent === 'string' ? sanitizeString(bodyContent) : JSON.stringify(sanitizeObject(bodyContent));
+        }
+
         return {
             method: activeTab.method || 'GET',
-            url: resolvedUrl,
-            headers: validHeaders,
-            body: bodyContent
+            url: sanitizeString(resolvedUrl),
+            headers: sanitizedHeadersList,
+            body: finalBodyContent
         };
     };
 

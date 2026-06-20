@@ -18,6 +18,7 @@ import {
   Settings,
   TestTube
 } from 'lucide-react';
+import { sanitizeObject, sanitizeString, sanitizeHeaders } from '@/lib/sanitize';
 
 type HeadersMap = Record<string, string>;
 
@@ -74,20 +75,24 @@ const ResponseViewer = ({responseData}: Props) => {
     navigator.clipboard.writeText(text).catch(() => {/* ignore */});
   };
 
+  const sanitizedHeaders = sanitizeHeaders(responseData?.requestRun?.headers as any);
+
   // Defensive parse: body may be already an object or invalid JSON
   let responseBody: unknown = {};
   let formattedJsonString = '';
   try {
     const rawBody = responseData?.requestRun?.body;
     if (typeof rawBody === 'string') {
-      responseBody = rawBody.length ? JSON.parse(rawBody) : rawBody;
+      const parsed = rawBody.length ? JSON.parse(rawBody) : rawBody;
+      responseBody = sanitizeObject(parsed);
     } else {
-      responseBody = rawBody ?? {};
+      responseBody = sanitizeObject(rawBody ?? {});
     }
     formattedJsonString = JSON.stringify(responseBody, null, 2);
   } catch (e) {
     // If parsing fails, fall back to the raw string
-    responseBody = responseData?.requestRun?.body ?? {};
+    const rawBody = responseData?.requestRun?.body;
+    responseBody = typeof rawBody === 'string' ? sanitizeString(rawBody) : sanitizeObject(rawBody ?? {});
     formattedJsonString = typeof responseBody === 'string' 
       ? responseBody 
       : JSON.stringify(responseBody, null, 2);
@@ -97,7 +102,9 @@ const ResponseViewer = ({responseData}: Props) => {
   const statusText: string | undefined = responseData.result?.statusText ?? responseData.requestRun?.statusText;
   const duration: number | undefined = responseData.result?.duration ?? responseData.requestRun?.durationMs;
   const size: number | undefined = responseData.result?.size;
+  
   const rawBody = responseData.requestRun?.body;
+  const sanitizedRawBody = typeof rawBody === 'string' ? sanitizeString(rawBody) : JSON.stringify(sanitizeObject(rawBody ?? {}));
 
   return (
     <div className="w-full bg-zinc-950 text-white p-6">
@@ -171,7 +178,7 @@ const ResponseViewer = ({responseData}: Props) => {
                     <Settings className="w-4 h-4 mr-2" />
                     Headers
                     <Badge variant="secondary" className="ml-2 text-xs bg-zinc-700">
-                      {Object.keys(responseData.requestRun.headers ?? {}).length}
+                      {Object.keys(sanitizedHeaders).length}
                     </Badge>
                   </TabsTrigger>
                   <TabsTrigger 
@@ -234,7 +241,7 @@ const ResponseViewer = ({responseData}: Props) => {
                         size="sm" 
                         variant="ghost" 
                         className="text-gray-400 hover:text-white"
-                        onClick={() => copyToClipboard(String(rawBody ?? ''))}
+                        onClick={() => copyToClipboard(sanitizedRawBody)}
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
@@ -243,7 +250,7 @@ const ResponseViewer = ({responseData}: Props) => {
  <Editor
                       height="100%"
                       defaultLanguage="text"
-                      value={String(rawBody ?? '')}
+                      value={sanitizedRawBody}
                       options={{
                         readOnly: true,
                         minimap: { enabled: false },
@@ -275,7 +282,7 @@ const ResponseViewer = ({responseData}: Props) => {
                 <ScrollArea className="h-96">
                   <div className="p-6">
                     <div className="space-y-3">
-                      {Object.entries(responseData.requestRun.headers ?? {}).map(([key, value]) => (
+                      {Object.entries(sanitizedHeaders).map(([key, value]) => (
                         <div key={key} className="flex items-start justify-between py-2 border-b border-zinc-800 last:border-b-0">
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-blue-300 text-sm">{key}</div>
