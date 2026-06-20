@@ -21,13 +21,12 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         <>
             {/* @ts-ignore */}
             <Header user={user}/>
-            <main className='max-h-[calc(100vh-4rem)] h-[calc(100vh-4rem)] flex flex-1 overflow-hidden'>
+            <main className='max-h-[calc(100vh-3.5rem)] h-[calc(100vh-3.5rem)] flex flex-1 overflow-hidden'>
                 <div className="flex h-full w-full">
-
-                    <div className="w-12 border-r border-zinc-800 bg-zinc-900">
+                    <div className="w-11 flex-shrink-0 border-r border-white/[0.06] bg-[#0f0f11]">
                         <TabbedLeftPanel />
                     </div>
-                    <div className="flex-1 bg-zinc-950">
+                    <div className="flex-1 bg-[#0d0d0f] overflow-hidden">
                         {children}
                     </div>
                 </div>

@@ -2,7 +2,6 @@
 import { Search } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import {
-  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -10,13 +9,11 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command"
 
 const SearchBar = () => {
   const [open, setOpen] = useState(false)
 
-  // Handle keyboard shortcut
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -24,70 +21,68 @@ const SearchBar = () => {
         setOpen((open) => !open)
       }
     }
-
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
   }, [])
 
   return (
     <>
-      {/* Search Button */}
       <button
         onClick={() => setOpen(true)}
-        className="relative flex flex-1 cursor-text items-center justify-between self-stretch rounded bg-zinc-900 px-4 py-2 text-gray-500 transition hover:bg-zinc-800 hover:text-gray-200 focus-visible:bg-zinc-700 focus-visible:text-gray-200 overflow-hidden"
+        className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-md
+          bg-white/[0.04] border border-white/[0.08] text-zinc-500
+          hover:bg-white/[0.07] hover:border-white/[0.12] hover:text-zinc-400
+          transition-all text-sm"
       >
-        <span className="inline-flex flex-1 items-center">
-          <Search size={16} className="mr-2" />
-          <span className="text-xs text-left">Search</span>
+        <span className="flex items-center gap-2">
+          <Search size={13} className="shrink-0" />
+          <span className="text-xs">Search</span>
         </span>
-        <span className="flex space-x-1">
-          <kbd className="px-1 py-0.5 text-xs bg-zinc-700 rounded">Ctrl</kbd>
-          <kbd className="px-1 py-0.5 text-xs bg-zinc-700 rounded">K</kbd>
+        <span className="flex items-center gap-0.5">
+          <kbd className="px-1.5 py-0.5 text-[10px] font-medium bg-white/[0.06] text-zinc-500 rounded border border-white/[0.08]">⌘</kbd>
+          <kbd className="px-1.5 py-0.5 text-[10px] font-medium bg-white/[0.06] text-zinc-500 rounded border border-white/[0.08]">K</kbd>
         </span>
       </button>
 
-      {/* Command Dialog */}
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <div className="bg-zinc-900 border border-zinc-800">
+        <div className="bg-[#1a1a1e] border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl">
           <CommandInput
-            placeholder="Type a command or search..."
-            className="bg-transparent border-none text-gray-300 placeholder:text-gray-500"
+            placeholder="Search requests, collections..."
+            className="bg-transparent border-none text-zinc-200 placeholder:text-zinc-500 h-12 text-sm"
           />
-          <CommandList className="bg-zinc-900">
-            <CommandEmpty className="text-gray-500 py-6 text-center">No results found.</CommandEmpty>
-            <CommandGroup>
-              <CommandItem onSelect={() => setOpen(false)} className="text-gray-300 hover:bg-zinc-800">
-                <span>Pre-request Script</span>
+          <CommandList className="bg-[#1a1a1e] border-t border-white/[0.06]">
+            <CommandEmpty className="text-zinc-500 py-8 text-center text-sm">No results found.</CommandEmpty>
+            <CommandGroup heading={<span className="text-zinc-500 text-xs font-medium tracking-wider uppercase px-2">Quick Actions</span>}>
+              <CommandItem onSelect={() => setOpen(false)} className="text-zinc-300 hover:bg-white/[0.06] rounded-lg mx-1 my-0.5">
+                Pre-request Script
               </CommandItem>
-              <CommandItem onSelect={() => setOpen(false)} className="text-gray-300 hover:bg-zinc-800">
-                <span>Tests</span>
+              <CommandItem onSelect={() => setOpen(false)} className="text-zinc-300 hover:bg-white/[0.06] rounded-lg mx-1 my-0.5">
+                Tests
               </CommandItem>
-              <CommandItem onSelect={() => setOpen(false)} className="text-gray-300 hover:bg-zinc-800">
-                <span>Variables</span>
+              <CommandItem onSelect={() => setOpen(false)} className="text-zinc-300 hover:bg-white/[0.06] rounded-lg mx-1 my-0.5">
+                Variables
               </CommandItem>
-              <CommandItem onSelect={() => setOpen(false)} className="text-gray-300 hover:bg-zinc-800">
-                <span>Documentation</span>
+              <CommandItem onSelect={() => setOpen(false)} className="text-zinc-300 hover:bg-white/[0.06] rounded-lg mx-1 my-0.5">
+                Documentation
               </CommandItem>
             </CommandGroup>
           </CommandList>
-
-          {/* Bottom navigation hints */}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800 bg-zinc-900">
-            <div className="flex items-center space-x-4 text-xs text-gray-500">
-              <div className="flex items-center space-x-1">
-                <kbd className="px-1.5 py-0.5 bg-zinc-800 text-gray-400 rounded text-xs">↑</kbd>
-                <kbd className="px-1.5 py-0.5 bg-zinc-800 text-gray-400 rounded text-xs">↓</kbd>
-                <span>to navigate</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <kbd className="px-1.5 py-0.5 bg-zinc-800 text-gray-400 rounded text-xs">↵</kbd>
-                <span>to select</span>
-              </div>
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.06] bg-[#141417]">
+            <div className="flex items-center gap-3 text-xs text-zinc-600">
+              <span className="flex items-center gap-1">
+                <kbd className="px-1 py-0.5 bg-white/[0.06] rounded text-zinc-500 border border-white/[0.08]">↑</kbd>
+                <kbd className="px-1 py-0.5 bg-white/[0.06] rounded text-zinc-500 border border-white/[0.08]">↓</kbd>
+                navigate
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="px-1 py-0.5 bg-white/[0.06] rounded text-zinc-500 border border-white/[0.08]">↵</kbd>
+                select
+              </span>
             </div>
-            <div className="flex items-center space-x-1 text-xs text-gray-500">
-              <kbd className="px-1.5 py-0.5 bg-zinc-800 text-gray-400 rounded text-xs">ESC</kbd>
-              <span>to close</span>
-            </div>
+            <span className="flex items-center gap-1 text-xs text-zinc-600">
+              <kbd className="px-1 py-0.5 bg-white/[0.06] rounded text-zinc-500 border border-white/[0.08]">ESC</kbd>
+              close
+            </span>
           </div>
         </div>
       </CommandDialog>
@@ -95,4 +90,4 @@ const SearchBar = () => {
   )
 }
 
-export default SearchBar
+export default SearchBar

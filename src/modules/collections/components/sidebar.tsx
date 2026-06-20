@@ -10,6 +10,7 @@ import { HistoryTab } from '@/modules/request/components/history-tab';
 import { MembersTab } from '@/modules/workspace/components/members-tab';
 import { useRequestPlaygroundStore } from '@/modules/request/store/useRequestStore';
 import CodeSnippetTab from '@/modules/request/components/code-snippet-tab';
+import { Hint } from '@/components/ui/hint';
 
 
 interface Props {
@@ -21,14 +22,11 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const { data: collections, isPending, isError } = useCollections(currentWorkspace?.id);
-
-
-
     const { activeTabId } = useRequestPlaygroundStore();
 
     if (isPending) return (
         <div className="flex-1 flex items-center justify-center">
-            <Loader className="w-6 h-6 text-indigo-400 animate-spin" />
+            <Loader className="w-4 h-4 text-zinc-500 animate-spin" />
         </div>
     )
 
@@ -47,54 +45,59 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
         switch (activeTab) {
             case 'Collections':
                 return (
-                    <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col">
-
-                        <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-                            <div className="flex items-center space-x-2">
-                                <span className="text-sm text-zinc-400">{currentWorkspace?.name}</span>
-                                <span className="text-zinc-600">›</span>
-                                <span className="text-sm font-medium">Collections</span>
+                    <div className="h-full bg-[#0f0f11] text-zinc-100 flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                            <div className="flex items-center gap-1.5 text-xs">
+                                <span className="text-zinc-500">{currentWorkspace?.name}</span>
+                                <span className="text-zinc-700">›</span>
+                                <span className="font-medium text-zinc-300">Collections</span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <HelpCircle className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
-                                <ExternalLink className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
+                            <div className="flex items-center gap-1">
+                                <button className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05] transition-all">
+                                    <HelpCircle className="w-3.5 h-3.5" />
+                                </button>
+                                <button className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05] transition-all">
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         </div>
 
-
-
-                        <div className="p-4 border-b border-zinc-800">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                        {/* Search */}
+                        <div className="px-4 py-2 border-b border-white/[0.06]">
+                            <div className="relative flex items-center">
+                                <Search className="absolute left-2.5 w-3.5 h-3.5 text-zinc-600" />
                                 <input
                                     type="text"
-                                    placeholder="Search"
-                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 
-                                    py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 
-                                    focus:ring-indigo-500 focus:border-transparent"
+                                    placeholder="Search collections..."
+                                    className="w-full bg-[#1a1a1e] border border-white/[0.07] rounded-md pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-white/[0.15] transition-colors"
                                 />
                             </div>
                         </div>
 
-
-                        <div className="p-4 border-b border-zinc-800">
-                            <Button variant="ghost" onClick={() => setIsModalOpen(true)}>
-                                <Plus className="w-4 h-4" />
-                                <span className="text-sm font-medium">New</span>
-                            </Button>
+                        {/* New button */}
+                        <div className="px-4 py-2 border-b border-white/[0.06]">
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors py-1"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>New</span>
+                            </button>
                         </div>
 
-                        {
-                            collections && collections.length > 0 ? (
+                        {/* Collections list */}
+                        <div className="flex-1 overflow-y-auto">
+                            {collections && collections.length > 0 ? (
                                 collections.map((collection) => (
-                                    <div className='flex flex-col justify-start items-start p-3 border-b border-zinc-800 w-full' key={collection.id}>
+                                    <div className='px-3 py-2 border-b border-white/[0.04] w-full' key={collection.id}>
                                         <CollectionFolder collection={collection} />
                                     </div>
                                 ))
                             ) : (
                                 <EmptyCollections />
-                            )
-                        }
+                            )}
+                        </div>
                     </div>
                 );
 
@@ -110,41 +113,48 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
             case 'Code':
                 return <CodeSnippetTab />;
             default:
-                return <div className="p-4 text-zinc-400">Select a tab to view content</div>;
+                return <div className="p-4 text-zinc-500 text-sm">Select a tab</div>;
         }
     };
 
     return (
-        <div className="flex h-screen bg-zinc-900 w-full overflow-hidden">
-            {/* Sidebar */}
-            <div className="w-12 flex-shrink-0 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center py-4 space-y-4">
-                {sidebarItems.map((item, index) => (
-                    <div
-                        key={index}
-                        onClick={() => setActiveTab(item.label)}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${activeTab === item.label
-                            ? 'bg-indigo-600 text-white'
-                            : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800'
-                            }`}
-                    >
-                        <item.icon className="w-4 h-4" />
-                    </div>
-                ))}
+        <div className="flex h-full bg-[#0f0f11] w-full overflow-hidden">
+            {/* Icon tab strip */}
+            <div className="w-11 flex-shrink-0 border-r border-white/[0.06] flex flex-col items-center py-3 gap-1">
+                {sidebarItems.map((item, index) => {
+                    const isActive = activeTab === item.label;
+                    return (
+                        <Hint label={item.label} key={index} side="left">
+                            <button
+                                onClick={() => setActiveTab(item.label)}
+                                className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all duration-150 ${
+                                    isActive
+                                        ? 'text-white bg-indigo-500/20'
+                                        : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05]'
+                                }`}
+                            >
+                                {isActive && (
+                                    <span className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-l-full bg-indigo-400" />
+                                )}
+                                <item.icon className="w-3.5 h-3.5" />
+                            </button>
+                        </Hint>
+                    );
+                })}
             </div>
 
-            <div className="flex-1 bg-zinc-900 overflow-y-auto min-w-0">
+            {/* Tab content */}
+            <div className="flex-1 min-w-0 overflow-hidden">
                 {renderTabContent()}
             </div>
-
 
             <CreateCollection
                 workspaceId={currentWorkspace?.id}
                 isModalOpen={isModalOpen}
                 setIsModalOpen={setIsModalOpen}
             />
-
         </div>
     );
 };
 
-export default TabbedSidebar;
+export default TabbedSidebar;

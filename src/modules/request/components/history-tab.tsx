@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { useWorkspaceHistory } from '../hooks/history';
 import { ChevronDown, ChevronRight, History } from 'lucide-react';
 import { useRequestPlaygroundStore } from '../store/useRequestStore';
-import { cn } from '@/lib/utils';
 
 function getGroupLabel(dateString: string) {
   const date = new Date(dateString);
@@ -45,11 +44,12 @@ export const HistoryTab = ({ workspaceId }: { workspaceId?: string }) => {
     setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const requestColorMap: Record<string, string> = {
-    GET: "text-green-500",
-    POST: "text-blue-500",
-    PUT: "text-yellow-500",
-    DELETE: "text-red-500",
+  const methodColors: Record<string, { text: string; bg: string }> = {
+    GET:    { text: "text-emerald-400", bg: "bg-emerald-500/10" },
+    POST:   { text: "text-blue-400",   bg: "bg-blue-500/10" },
+    PUT:    { text: "text-amber-400",  bg: "bg-amber-500/10" },
+    DELETE: { text: "text-red-400",    bg: "bg-red-500/10" },
+    PATCH:  { text: "text-purple-400", bg: "bg-purple-500/10" },
   };
 
   const handleRunClick = (run: any) => {
@@ -99,13 +99,24 @@ export const HistoryTab = ({ workspaceId }: { workspaceId?: string }) => {
                       <div 
                         key={run.id}
                         onClick={() => handleRunClick(run)}
-                        className="flex items-center space-x-3 text-xs py-1.5 px-2 hover:bg-zinc-800 rounded cursor-pointer group"
+                        className="flex items-center gap-2 text-xs py-1.5 px-2 hover:bg-white/[0.04] rounded cursor-pointer group"
                       >
-                        <span className={cn("font-bold w-12 text-right shrink-0", requestColorMap[run.request.method] || "text-zinc-500")}>
-                          {run.request.method}
-                        </span>
-                        <span className="truncate text-zinc-300 group-hover:text-white flex-1" title={run.request.url}>
-                          {run.request.url}
+                        {/* Method badge */}
+                        {(() => {
+                          const color = methodColors[run.request.method] ?? { text: "text-zinc-400", bg: "bg-zinc-700/20" };
+                          return (
+                            <span className={`text-[10px] font-bold uppercase tracking-wide px-1 py-0.5 rounded shrink-0 ${color.text} ${color.bg}`}>
+                              {run.request.method}
+                            </span>
+                          );
+                        })()}
+
+                        {/* URL — show resolved URL if available, else template */}
+                        <span
+                          className="truncate text-zinc-400 group-hover:text-zinc-200 flex-1 font-mono text-[11px] transition-colors"
+                          title={run.resolvedUrl || run.request.url}
+                        >
+                          {run.resolvedUrl || run.request.url}
                         </span>
                       </div>
                     ))}

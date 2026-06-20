@@ -13,7 +13,13 @@ export async function getWorkspaceHistory(workspaceId: string) {
           }
         }
       },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        statusText: true,
+        durationMs: true,
+        resolvedUrl: true,
+        createdAt: true,
         request: {
           select: {
             id: true,

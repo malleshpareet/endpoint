@@ -92,45 +92,32 @@ export default function PlaygroundPage() {
 
   if (!activeTab) {
     return (
-      <div className="flex flex-col h-full items-center justify-center bg-black gap-8">
-        {/* Logo */}
+      <div className="flex flex-col h-full items-center justify-center bg-[#0d0d0f] gap-6">
         <Image
           src="/logo__2_-removebg-preview.png"
-          alt="Logo"
-          width={80}
-          height={80}
-          className="object-contain"
+          alt="EndPoint"
+          width={40}
+          height={40}
+          className="object-contain opacity-60"
         />
-
-        {/* Keyboard shortcuts — no card bg */}
-        <div className="space-y-3" style={{ minWidth: 240 }}>
-          <div className="flex items-center justify-between gap-10">
-            <kbd
-              className="px-2.5 py-1 rounded-md text-[12px] font-mono font-medium"
-              style={{
-                background: "rgba(99,102,241,0.12)",
-                color: "#818cf8",
-                border: "1px solid rgba(99,102,241,0.2)",
-                letterSpacing: "0.03em",
-              }}
-            >
-              Ctrl+G
-            </kbd>
-            <span className="text-white font-semibold text-[14px]">New Request</span>
+        <div className="text-center">
+          <p className="text-sm font-medium text-zinc-400 mb-1">No request open</p>
+          <p className="text-xs text-zinc-600">Open a saved request or create a new one</p>
+        </div>
+        <div className="flex flex-col gap-2 min-w-[220px]">
+          <div className="flex items-center justify-between gap-8 px-3 py-2 rounded-md bg-white/[0.03] border border-white/[0.06]">
+            <span className="text-xs text-zinc-500">New request</span>
+            <span className="flex items-center gap-0.5">
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white/[0.06] text-zinc-400 rounded border border-white/[0.08]">Ctrl</kbd>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white/[0.06] text-zinc-400 rounded border border-white/[0.08]">G</kbd>
+            </span>
           </div>
-          <div className="flex items-center justify-between gap-10">
-            <kbd
-              className="px-2.5 py-1 rounded-md text-[12px] font-mono font-medium"
-              style={{
-                background: "rgba(99,102,241,0.12)",
-                color: "#818cf8",
-                border: "1px solid rgba(99,102,241,0.2)",
-                letterSpacing: "0.03em",
-              }}
-            >
-              Ctrl+S
-            </kbd>
-            <span className="text-white font-semibold text-[14px]">Save Request</span>
+          <div className="flex items-center justify-between gap-8 px-3 py-2 rounded-md bg-white/[0.03] border border-white/[0.06]">
+            <span className="text-xs text-zinc-500">Save request</span>
+            <span className="flex items-center gap-0.5">
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white/[0.06] text-zinc-400 rounded border border-white/[0.08]">Ctrl</kbd>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white/[0.06] text-zinc-400 rounded border border-white/[0.08]">S</kbd>
+            </span>
           </div>
         </div>
       </div>

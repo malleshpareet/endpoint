@@ -357,7 +357,8 @@ export async function run(requestId: string, environmentId?: string, localVariab
         statusText: result.statusText || (result.error ? 'Error' : null),
         headers: result.headers || "",
         body: result.data ? (typeof result.data === 'string' ? result.data : JSON.stringify(result.data)) : null,
-        durationMs: result.duration || 0
+        durationMs: result.duration || 0,
+        resolvedUrl: requestConfig.url,
       }
     });
 
@@ -476,7 +477,8 @@ export async function runDirect(requestData: {
           statusText: result.statusText || (result.error ? 'Error' : null),
           headers: result.headers || "",
           body: result.data ? (typeof result.data === 'string' ? result.data : JSON.stringify(result.data)) : null,
-          durationMs: result.duration || 0
+          durationMs: result.duration || 0,
+          resolvedUrl: requestConfig.url,
         }
       });
 

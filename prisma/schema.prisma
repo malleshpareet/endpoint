@@ -198,11 +198,12 @@ model RequestRun {
   requestId String
   request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
-  status     Int
-  statusText String?
-  headers    Json?
-  body       String? // raw text or JSON string
-  durationMs Int?
+  status      Int
+  statusText  String?
+  headers     Json?
+  body        String? // raw text or JSON string
+  durationMs  Int?
+  resolvedUrl String? // the actual URL executed after variable resolution
 
   createdAt DateTime @default(now())
 }

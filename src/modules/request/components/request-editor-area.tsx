@@ -74,36 +74,27 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
   return (
     <Tabs
       defaultValue="parameters"
-      className="bg-zinc-950/30 rounded-xl border border-zinc-800/50 shadow-inner w-full flex flex-col h-full overflow-hidden"
+      className="bg-[#0d0d0f] rounded-none border-0 w-full flex flex-col h-full overflow-hidden"
     >
-      <div className="p-4 pb-0">
-        <TabsList className="bg-zinc-900/50 backdrop-blur-md border border-zinc-800/50 p-1 rounded-full w-full justify-between gap-1 shadow-sm">
-          <TabsTrigger 
-            value="parameters" 
-            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
+      <TabsList className="border-b border-white/[0.06] bg-[#111113] px-2 flex items-center gap-0.5 rounded-none h-auto w-full justify-start p-0">
+        {(["parameters", "authorization", "headers", "body"] as const).map((val) => (
+          <TabsTrigger
+            key={val}
+            value={val}
+            className="relative px-3 py-2 text-xs font-medium text-zinc-500
+              data-[state=active]:text-zinc-200 data-[state=active]:bg-transparent
+              data-[state=inactive]:bg-transparent
+              rounded-none border-0 shadow-none
+              after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px]
+              after:rounded-t-sm
+              data-[state=active]:after:bg-indigo-500
+              data-[state=inactive]:after:bg-transparent
+              hover:text-zinc-400 transition-colors capitalize"
           >
-            Parameters
+            {val.charAt(0).toUpperCase() + val.slice(1)}
           </TabsTrigger>
-          <TabsTrigger 
-            value="authorization" 
-            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
-          >
-            Authorization
-          </TabsTrigger>
-          <TabsTrigger 
-            value="headers" 
-            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
-          >
-            Headers
-          </TabsTrigger>
-          <TabsTrigger 
-            value="body" 
-            className="flex-1 rounded-full data-[state=active]:bg-orange-500/15 data-[state=active]:text-orange-500 data-[state=active]:shadow-sm transition-all duration-300 py-1.5 text-zinc-400 font-medium"
-          >
-            Body
-          </TabsTrigger>
-        </TabsList>
-      </div>
+        ))}
+      </TabsList>
 
       <TabsContent value="parameters" >
         <KeyValueFormEditor

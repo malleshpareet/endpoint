@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
@@ -8,14 +8,14 @@ import { HotkeysProviders } from "@/components/hot-key-provider";
 
 
 
-const poppins = Poppins({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-geist-sans",
 })
 
 export const metadata: Metadata = {
-  title: "Httply",
-  description: "A modern API client for developers.",
+  title: "EndPoint — API Client",
+  description: "A professional API client for developers.",
 };
 
 export default function RootLayout({
@@ -26,15 +26,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${poppins.className} antialiased`}
+        className={`${inter.variable} ${inter.className} antialiased`}
       >
         <QueryProvider>
           <ThemeProvider
             attribute={"class"}
             defaultTheme="dark"
-            enableSystem>
+            enableSystem={false}
+            forcedTheme="dark">
             <HotkeysProviders>
-              <Toaster />
+              <Toaster
+                theme="dark"
+                toastOptions={{
+                  classNames: {
+                    toast: "bg-[#1a1a1e] border border-white/[0.08] text-zinc-200 text-xs",
+                    description: "text-zinc-500",
+                  }
+                }}
+              />
               {children}
             </HotkeysProviders>
           </ThemeProvider>
@@ -43,4 +52,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+}
