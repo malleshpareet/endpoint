@@ -14,7 +14,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "EndPoint — API Client",
+  title: "Httply — API Client",
   description: "A professional API client for developers.",
 };
 
