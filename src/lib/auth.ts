@@ -9,6 +9,21 @@ export const auth = betterAuth({
         provider: "postgresql",
     }),
 
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user: any) => {
+                    try {
+                        const { sendWelcomeEmail } = await import("./mail");
+                        await sendWelcomeEmail(user.email, user.name || "there");
+                    } catch (error) {
+                        console.error("Failed to send welcome email:", error);
+                    }
+                }
+            }
+        }
+    },
+
     socialProviders: {
         github: {
             clientId: env.GITHUB_CLIENT_ID,
