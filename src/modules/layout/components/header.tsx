@@ -32,13 +32,13 @@ const Header = ({ user }: Props) => {
       <div className='flex items-center gap-3 min-w-[120px]'>
         <Image
           src="/logo__2_-removebg-preview.png"
-          alt="EndPoint"
+          alt="Httply"
           width={28}
           height={28}
           className="object-contain opacity-90"
         />
         <span className="text-sm font-semibold text-white/80 tracking-tight hidden sm:block">
-          EndPoint
+          Httply
         </span>
       </div>
 
