@@ -83,7 +83,13 @@ export default function RootLayout({
       </head>
       <body
         className={`${inter.variable} ${inter.className} antialiased`}
+        suppressHydrationWarning
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if (window.__TAURI_INTERNALS__ || window.__TAURI__) document.body.classList.add('tauri-glass');`
+          }}
+        />
         <ConsoleSanitizerProvider>
           <QueryProvider>
             <ThemeProvider
