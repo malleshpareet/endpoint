@@ -57,15 +57,23 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "Httply",
-              applicationCategory: "DeveloperApplication",
-              operatingSystem: "Any",
-              url: "https://httply.qzz.io",
-              description: "A professional API client for developers. Test, debug, and automate REST APIs easily."
-            })
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                name: "Httply",
+                applicationCategory: "DeveloperApplication",
+                operatingSystem: "Any",
+                url: "https://httply.qzz.io",
+                description: "A professional API client for developers. Test, debug, and automate REST APIs easily."
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: "Httply",
+                url: "https://httply.qzz.io/"
+              }
+            ])
           }}
         />
       </head>
