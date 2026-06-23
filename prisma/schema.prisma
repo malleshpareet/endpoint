@@ -85,6 +85,7 @@ model WorkspaceInvite {
   id          String    @id @default(cuid())
   workspaceId String
   token       String    @unique
+  email       String?
   expiresAt   DateTime?
   createdById String
 

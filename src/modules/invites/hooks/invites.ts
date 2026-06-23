@@ -5,7 +5,9 @@ import {
     generateWorkspaceInvite,
     acceptWorkspaceInvite,
     getAllWorkspaceMembers,
-    inviteUserByEmail
+    inviteUserByEmail,
+    getPendingInvites,
+    rejectWorkspaceInvite
 } from "@/modules/invites/actions";
 
 export const useInviteUserByEmail = (workspaceId: string) => {
@@ -43,10 +45,15 @@ export const useGenerateWorkspaceInvite = (workspaceId: string) => {
 };
 
 export const useAcceptWorkspaceInvite = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (token: string) => acceptWorkspaceInvite(token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-invites"] });
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    },
   });
-  
 };
 
 export const useGetWorkspaceMemebers = (workspaceId: string) => {
@@ -54,5 +61,25 @@ export const useGetWorkspaceMemebers = (workspaceId: string) => {
     queryKey: ["workspace-members", workspaceId],
     queryFn: async () => getAllWorkspaceMembers(workspaceId),
     enabled: !!workspaceId,
+  });
+};
+
+export const usePendingInvites = () => {
+  return useQuery({
+    queryKey: ["pending-invites"],
+    queryFn: async () => getPendingInvites(),
+  });
+};
+
+export const useRejectWorkspaceInvite = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteId: string) => rejectWorkspaceInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["pending-invites"],
+      });
+    },
   });
 };

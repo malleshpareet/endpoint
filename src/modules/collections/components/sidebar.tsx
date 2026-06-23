@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Archive, Clock, Code, Share2, Users, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box } from 'lucide-react';
+import { Archive, Clock, Code, Share2, Users, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box, Mail } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 import { useCollections } from '@/modules/collections/hooks/collections';
 import CreateCollection from './create-collection';
@@ -8,6 +8,7 @@ import CollectionFolder from './collection-folder';
 import EnvironmentsTab from '@/modules/environments/components/environments-tab';
 import { HistoryTab } from '@/modules/request/components/history-tab';
 import { MembersTab } from '@/modules/workspace/components/members-tab';
+import { InvitesTab } from '@/modules/invites/components/invites-tab';
 import { useRequestPlaygroundStore } from '@/modules/request/store/useRequestStore';
 import CodeSnippetTab from '@/modules/request/components/code-snippet-tab';
 import { Hint } from '@/components/ui/hint';
@@ -30,6 +31,12 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
 
     const { data: collections, isPending, isError } = useCollections(currentWorkspace?.id);
     const { activeTabId } = useRequestPlaygroundStore();
+
+    React.useEffect(() => {
+        const handleOpenInvites = () => setActiveTab('Invites');
+        window.addEventListener('open-invites-tab', handleOpenInvites);
+        return () => window.removeEventListener('open-invites-tab', handleOpenInvites);
+    }, []);
 
     const handleImportClick = () => {
         fileInputRef.current?.click();
@@ -79,6 +86,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
         { icon: Box, label: 'Environments' },
         { icon: Clock, label: 'History' },
         { icon: Users, label: 'Team' },
+        { icon: Mail, label: 'Invites' },
     ];
 
     if (activeTabId) {
@@ -168,6 +176,9 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
 
             case 'Team':
                 return <MembersTab workspaceId={currentWorkspace?.id} />;
+
+            case 'Invites':
+                return <InvitesTab />;
 
             case 'Code':
                 return <CodeSnippetTab />;

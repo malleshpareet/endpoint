@@ -8,6 +8,7 @@ import { UserProps } from '../types'
 import SearchBar from './search-bar'
 import InviteMember from './invite-memeber'
 import WorkSpace from './workspace'
+import NotificationBell from './notification-bell'
 
 interface Props {
   user: UserProps
@@ -52,6 +53,7 @@ const Header = ({ user }: Props) => {
         <InviteMember />
         <WorkSpace user={user} />
         <div className="w-px h-4 bg-white/10 mx-1" />
+        <NotificationBell />
         <button
           id="fullscreen-toggle"
           onClick={toggleFullscreen}

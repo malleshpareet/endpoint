@@ -4,6 +4,7 @@ import Header from '@/modules/layout/components/header'
 
 import { initializeWorkspace } from '@/modules/workspace/actions'
 import TabbedLeftPanel from '@/modules/workspace/components/tabbed-left-panel'
+import { InviteListener } from '@/modules/invites/components/invite-listener'
 import React from 'react'
 import { redirect } from 'next/navigation'
 
@@ -21,6 +22,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         <>
             {/* @ts-ignore */}
             <Header user={user}/>
+            <InviteListener email={user.email} />
             <main className='max-h-[calc(100vh-3.5rem)] h-[calc(100vh-3.5rem)] flex flex-1 overflow-hidden'>
                 <div className="flex h-full w-full">
                     <div className="w-11 flex-shrink-0 border-r border-white/[0.06] bg-[#0f0f11]">
