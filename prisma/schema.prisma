@@ -116,13 +116,22 @@ model Workspace {
   @@unique([name, ownerId])
 }
 
+enum ENVIRONMENT_TYPE {
+  GLOBAL
+  COLLECTION
+}
+
 model Environment {
   id          String     @id @default(cuid())
   name        String
+  type        ENVIRONMENT_TYPE @default(GLOBAL)
   values      Json       // e.g. { "BASE_URL": "https://api.example.com", "AUTH": "Bearer xxx" }
 
   workspaceId String
   workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 }
 
 enum MEMBER_ROLE {
@@ -158,6 +167,7 @@ model Collection {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   requests    Request[]
+  environments Environment[]
   variables   Json? @default("[]")
 
   createdAt DateTime @default(now())
@@ -180,6 +190,9 @@ model Request {
   parameters Json?
   headers    Json? // e.g. 
   authorization Json?
+
+  preRequestScript String?
+  testScript       String?
 
   body     Json? // request body (JSON / text)
   response Json? // optional: save last response

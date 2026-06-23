@@ -111,6 +111,9 @@
   * {
     @apply border-border outline-ring/50 transition-colors duration-200;
   }
+  a, button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] {
+    @apply cursor-pointer;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20;
   }

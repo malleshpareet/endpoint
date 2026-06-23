@@ -226,6 +226,7 @@ const ResponseViewer = ({responseData}: Props) => {
                           horizontal: 'auto',
                           verticalScrollbarSize: 8,
                           horizontalScrollbarSize: 8,
+                          alwaysConsumeMouseWheel: false,
                         },
                       }}
                       theme="vs-dark"
@@ -269,6 +270,7 @@ const ResponseViewer = ({responseData}: Props) => {
                           horizontal: 'auto',
                           verticalScrollbarSize: 8,
                           horizontalScrollbarSize: 8,
+                          alwaysConsumeMouseWheel: false,
                         },
                       }}
                       theme="vs-dark"

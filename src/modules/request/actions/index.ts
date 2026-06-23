@@ -8,6 +8,7 @@ import axios, { AxiosRequestConfig } from "axios";
 import aws4 from "aws4";
 import hawk from "hawk";
 import crypto from "crypto";
+import vm from "vm";
 const OAuth = require("oauth-1.0a");
 
 function applyAuthorization(requestConfig: any, authorizationStr: string | null | undefined, finalVariables: any[], resolveStr: (s: string, vars: any[]) => string) {
@@ -115,6 +116,8 @@ export type Request = {
   headers?: string;
   parameters?: string;
   authorization?: string;
+  preRequestScript?: string;
+  testScript?: string;
 };
 
 
@@ -133,6 +136,8 @@ export const addRequestToCollection = async (collectionId: string, value: Reques
       headers: value.headers,
       parameters: value.parameters,
       authorization: value.authorization,
+      preRequestScript: value.preRequestScript,
+      testScript: value.testScript,
     }
   });
 
@@ -159,6 +164,8 @@ export const saveRequest = async (id: string, value: Request) => {
       headers: value.headers,
       parameters: value.parameters,
       authorization: value.authorization,
+      preRequestScript: value.preRequestScript,
+      testScript: value.testScript,
     },
   });
 
@@ -238,6 +245,80 @@ function parseKeyValueArray(arr: any): Record<string, string> | undefined {
     }
   });
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function executeScriptSafely(
+  script: string | undefined | null,
+  contextData: {
+    environmentVariables: Record<string, string>;
+    localVariables: Record<string, string>;
+    response?: any;
+    request?: any;
+  }
+) {
+  if (!script || typeof script !== "string" || script.trim() === "") {
+    return {
+      environmentMutations: {},
+      localMutations: {},
+      logs: []
+    };
+  }
+
+  const logs: string[] = [];
+  const environmentMutations: Record<string, string> = {};
+  const localMutations: Record<string, string> = {};
+
+  const sandboxEnv = {
+    pm: {
+      environment: {
+        get: (key: string) => contextData.environmentVariables[key] || environmentMutations[key],
+        set: (key: string, value: any) => {
+          environmentMutations[key] = String(value);
+        }
+      },
+      variables: {
+        get: (key: string) => contextData.localVariables[key] || localMutations[key],
+        set: (key: string, value: any) => {
+          localMutations[key] = String(value);
+        }
+      },
+      response: contextData.response ? {
+        json: () => {
+          try {
+            return typeof contextData.response === "string" ? JSON.parse(contextData.response) : contextData.response;
+          } catch(e) {
+            return null;
+          }
+        },
+        text: () => typeof contextData.response === "string" ? contextData.response : JSON.stringify(contextData.response)
+      } : undefined,
+      request: contextData.request
+    },
+    console: {
+      log: (...args: any[]) => logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')),
+      error: (...args: any[]) => logs.push("ERROR: " + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')),
+      warn: (...args: any[]) => logs.push("WARN: " + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')),
+    }
+  };
+
+  try {
+    const context = vm.createContext(sandboxEnv);
+    vm.runInContext(script, context, { timeout: 1000 });
+  } catch (error: any) {
+    logs.push("Script execution error: " + error.message);
+  }
+
+  return {
+    environmentMutations,
+    localMutations,
+    logs
+  };
+}
+
+function updateVariablesMap(mergedVarsMap: Map<string, any>, mutations: Record<string, string>) {
+  for (const [key, value] of Object.entries(mutations)) {
+    mergedVarsMap.set(key, { key, value: String(value), currentValue: String(value), enabled: true });
+  }
 }
 
 export async function sendRequest(req: {
@@ -335,6 +416,20 @@ export async function run(requestId: string, environmentId?: string, localVariab
     collectionVars.forEach(v => mergedVarsMap.set(v.key, v));
     localVariables.forEach(v => mergedVarsMap.set(v.key, v));
 
+    const envVarsRecord: Record<string, string> = {};
+    envVars.forEach(v => envVarsRecord[v.key] = String(v.currentValue !== undefined ? v.currentValue : v.value));
+
+    const localVarsRecord: Record<string, string> = {};
+    Array.from(mergedVarsMap.values()).forEach(v => localVarsRecord[v.key] = String(v.currentValue !== undefined ? v.currentValue : v.value));
+
+    const preRequestResult = executeScriptSafely(request.preRequestScript, {
+      environmentVariables: envVarsRecord,
+      localVariables: localVarsRecord,
+    });
+    
+    updateVariablesMap(mergedVarsMap, preRequestResult.environmentMutations);
+    updateVariablesMap(mergedVarsMap, preRequestResult.localMutations);
+
     const finalVariables = Array.from(mergedVarsMap.values());
 
     const requestConfig = {
@@ -348,6 +443,39 @@ export async function run(requestId: string, environmentId?: string, localVariab
     applyAuthorization(requestConfig, request.authorization as string, finalVariables, resolveString);
 
     const result = await sendRequest(requestConfig);
+
+    const testScriptResult = executeScriptSafely(request.testScript, {
+      environmentVariables: { ...envVarsRecord, ...preRequestResult.environmentMutations },
+      localVariables: { ...localVarsRecord, ...preRequestResult.localMutations },
+      response: result.data
+    });
+
+    const finalEnvMutations = { ...preRequestResult.environmentMutations, ...testScriptResult.environmentMutations };
+
+    if (Object.keys(finalEnvMutations).length > 0 && environmentId) {
+      const dbEnv = await db.environment.findUnique({ where: { id: environmentId } });
+      if (dbEnv) {
+        let currentValues: any[] = [];
+        if (Array.isArray(dbEnv.values)) {
+          currentValues = [...dbEnv.values];
+        }
+        
+        for (const [key, val] of Object.entries(finalEnvMutations)) {
+          const idx = currentValues.findIndex((v: any) => v.key === key);
+          if (idx >= 0) {
+            currentValues[idx].currentValue = val;
+            currentValues[idx].value = val;
+          } else {
+            currentValues.push({ key, value: val, currentValue: val, enabled: true });
+          }
+        }
+
+        await db.environment.update({
+          where: { id: environmentId },
+          data: { values: currentValues }
+        });
+      }
+    }
 
 
     const requestRun = await db.requestRun.create({
@@ -452,6 +580,24 @@ export async function runDirect(requestData: {
     collectionVars.forEach(v => mergedVarsMap.set(v.key, v));
     (requestData.localVariables || []).forEach(v => mergedVarsMap.set(v.key, v));
 
+    const envVarsRecord: Record<string, string> = {};
+    envVars.forEach(v => envVarsRecord[v.key] = String(v.currentValue !== undefined ? v.currentValue : v.value));
+
+    const localVarsRecord: Record<string, string> = {};
+    Array.from(mergedVarsMap.values()).forEach(v => localVarsRecord[v.key] = String(v.currentValue !== undefined ? v.currentValue : v.value));
+
+    const existingReq = await db.request.findUnique({ where: { id: requestData.id } });
+    const preRequestScript = existingReq?.preRequestScript || null;
+    const testScript = existingReq?.testScript || null;
+
+    const preRequestResult = executeScriptSafely(preRequestScript, {
+      environmentVariables: envVarsRecord,
+      localVariables: localVarsRecord,
+    });
+    
+    updateVariablesMap(mergedVarsMap, preRequestResult.environmentMutations);
+    updateVariablesMap(mergedVarsMap, preRequestResult.localMutations);
+
     const finalVariables = Array.from(mergedVarsMap.values());
 
     const requestConfig = {
@@ -466,9 +612,40 @@ export async function runDirect(requestData: {
 
     const result = await sendRequest(requestConfig);
 
-    let requestRun = null;
-    const existingReq = await db.request.findUnique({ where: { id: requestData.id } });
+    const testScriptResult = executeScriptSafely(testScript, {
+      environmentVariables: { ...envVarsRecord, ...preRequestResult.environmentMutations },
+      localVariables: { ...localVarsRecord, ...preRequestResult.localMutations },
+      response: result.data
+    });
 
+    const finalEnvMutations = { ...preRequestResult.environmentMutations, ...testScriptResult.environmentMutations };
+
+    if (Object.keys(finalEnvMutations).length > 0 && requestData.environmentId) {
+      const dbEnv = await db.environment.findUnique({ where: { id: requestData.environmentId } });
+      if (dbEnv) {
+        let currentValues: any[] = [];
+        if (Array.isArray(dbEnv.values)) {
+          currentValues = [...dbEnv.values];
+        }
+        
+        for (const [key, val] of Object.entries(finalEnvMutations)) {
+          const idx = currentValues.findIndex((v: any) => v.key === key);
+          if (idx >= 0) {
+            currentValues[idx].currentValue = val;
+            currentValues[idx].value = val;
+          } else {
+            currentValues.push({ key, value: val, currentValue: val, enabled: true });
+          }
+        }
+
+        await db.environment.update({
+          where: { id: requestData.environmentId },
+          data: { values: currentValues }
+        });
+      }
+    }
+
+    let requestRun = null;
     if (existingReq) {
       requestRun = await db.requestRun.create({
         data: {
@@ -503,8 +680,8 @@ export async function runDirect(requestData: {
   } catch (error: any) {
     let failedRun = null;
     try {
-      const existingReq = await db.request.findUnique({ where: { id: requestData.id } });
-      if (existingReq) {
+      const existingReqFallback = await db.request.findUnique({ where: { id: requestData.id } });
+      if (existingReqFallback) {
         failedRun = await db.requestRun.create({
           data: {
             requestId: requestData.id,
