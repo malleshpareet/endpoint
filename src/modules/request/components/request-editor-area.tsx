@@ -7,6 +7,7 @@ import AuthorizationEditor from "./authorization-editor";
 
 import { toast } from "sonner";
 import BodyEditor from "./body-editor";
+import ScriptsTab from "./scripts-tab";
 
 interface Props {
   tab: RequestTab;
@@ -74,7 +75,7 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
       className="bg-[#0d0d0f] rounded-none border-0 w-full flex flex-col h-full overflow-hidden"
     >
       <TabsList className="border-b border-white/[0.06] bg-[#111113] px-2 flex items-center gap-0.5 rounded-none h-auto w-full justify-start p-0">
-        {(["parameters", "authorization", "headers", "body"] as const).map((val) => (
+        {(["parameters", "authorization", "headers", "body", "scripts"] as const).map((val) => (
           <TabsTrigger
             key={val}
             value={val}
@@ -124,11 +125,15 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
         />
       </TabsContent>
 
-      <TabsContent value="body">
+      <TabsContent value="body" className="p-0 h-full overflow-hidden flex-1 data-[state=active]:flex">
         <BodyEditor
           initialData={getBodyData()}
           onSubmit={handleBodyChange}
         />
+      </TabsContent>
+
+      <TabsContent value="scripts" className="p-0 h-full overflow-hidden flex-1 data-[state=active]:flex flex-col">
+        <ScriptsTab tab={tab} updateTab={updateTab} />
       </TabsContent>
     </Tabs>
   );

@@ -11,6 +11,8 @@ interface SavedRequest {
   headers?: string;
   parameters?: string;
   authorization?: string;
+  preRequestScript?: string;
+  testScript?: string;
 }
 
 export type RequestTab = {
@@ -22,6 +24,8 @@ export type RequestTab = {
   headers?: string;
   parameters?: string;
   authorization?: string;
+  preRequestScript?: string;
+  testScript?: string;
   unsavedChanges?: boolean;
   requestId?: string; // 👈 link to DB request
   collectionId?: string;
@@ -82,6 +86,8 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         body: "",
         headers: "",
         parameters: "",
+        preRequestScript: "",
+        testScript: "",
         unsavedChanges: true,
       };
       return {
@@ -134,6 +140,8 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         headers: req.headers,
         parameters: req.parameters,
         authorization: typeof req.authorization === 'string' ? req.authorization : (req.authorization ? JSON.stringify(req.authorization) : undefined),
+        preRequestScript: req.preRequestScript,
+        testScript: req.testScript,
         requestId: req.id,
         collectionId: req.collectionId,
         workspaceId: req.workspaceId,
@@ -161,6 +169,8 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
             headers: typeof savedRequest?.headers === 'string' ? savedRequest.headers : (savedRequest?.headers ? JSON.stringify(savedRequest.headers) : ''),
             parameters: typeof savedRequest?.parameters === 'string' ? savedRequest.parameters : (savedRequest?.parameters ? JSON.stringify(savedRequest.parameters) : ''),
             authorization: typeof savedRequest?.authorization === 'string' ? savedRequest.authorization : (savedRequest?.authorization ? JSON.stringify(savedRequest.authorization) : ''),
+            preRequestScript: savedRequest.preRequestScript,
+            testScript: savedRequest.testScript,
             url: savedRequest.url,
             unsavedChanges: false,
           }

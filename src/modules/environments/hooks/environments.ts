@@ -12,8 +12,8 @@ export function useEnvironments(workspaceId?: string) {
 export function useCreateEnvironment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ workspaceId, name }: { workspaceId: string; name: string }) =>
-      createEnvironment(workspaceId, name),
+    mutationFn: ({ workspaceId, name, type, collectionId }: { workspaceId: string; name: string; type?: "GLOBAL" | "COLLECTION"; collectionId?: string | null }) =>
+      createEnvironment(workspaceId, name, type, collectionId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["environments", variables.workspaceId] });
     },

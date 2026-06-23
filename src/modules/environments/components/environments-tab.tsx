@@ -3,11 +3,15 @@
 import React, { useState } from "react";
 import { useEnvironments, useCreateEnvironment, useUpdateEnvironment, useDeleteEnvironment, useWorkspaceGlobals, useUpdateWorkspaceGlobals } from "../hooks/environments";
 import { useWorkspaceStore } from "@/modules/layout/stores";
+import { useCollections } from "@/modules/collections/hooks/collections";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Globe, Plus, Search, Copy, Trash2, Box, Save, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Variable {
   key: string;
@@ -22,14 +26,26 @@ const EnvironmentsTab = () => {
 
   const createEnv = useCreateEnvironment();
   const deleteEnv = useDeleteEnvironment();
+  const { data: collections } = useCollections(selectedWorkspace?.id || "");
 
   const [activeView, setActiveView] = useState<string>("list"); // "list", "globals", or environment id
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newEnvName, setNewEnvName] = useState("New Environment");
+  const [newEnvType, setNewEnvType] = useState<"GLOBAL" | "COLLECTION">("GLOBAL");
+  const [newEnvCollectionId, setNewEnvCollectionId] = useState<string>("");
+
   const handleCreate = async () => {
     if (!selectedWorkspace) return;
     try {
-      const res = await createEnv.mutateAsync({ workspaceId: selectedWorkspace.id, name: "New Environment" });
+      const res = await createEnv.mutateAsync({ 
+        workspaceId: selectedWorkspace.id, 
+        name: newEnvName,
+        type: newEnvType,
+        collectionId: newEnvType === "COLLECTION" ? newEnvCollectionId : undefined
+      });
+      setIsCreateOpen(false);
       setActiveView(res.id);
       toast.success("Environment created");
     } catch (e) {
@@ -80,7 +96,7 @@ const EnvironmentsTab = () => {
             <Button onClick={() => setActiveView("globals")} size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-white" title="Globals">
               <Globe className="w-4 h-4" />
             </Button>
-            <Button onClick={handleCreate} size="icon" className="bg-orange-500 hover:bg-orange-600 text-white h-8 w-8" title="Create Environment">
+            <Button onClick={() => setIsCreateOpen(true)} size="icon" className="bg-orange-500 hover:bg-orange-600 text-white h-8 w-8" title="Create Environment">
               <Plus className="w-4 h-4" />
             </Button>
           </div>
@@ -112,8 +128,11 @@ const EnvironmentsTab = () => {
                 onClick={() => setActiveView(env.id)}
               >
                 <TableCell className="font-medium text-zinc-200">
-                  <div className="flex items-center">
-                    {env.name}
+                  <div className="flex flex-col">
+                    <span>{env.name}</span>
+                    <span className="text-xs text-zinc-500 font-normal">
+                      {env.type === "COLLECTION" ? "Collection specific" : "Global"}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
@@ -138,6 +157,61 @@ const EnvironmentsTab = () => {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border border-zinc-800 text-zinc-300">
+          <DialogHeader>
+            <DialogTitle>Create Environment</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={newEnvName}
+                onChange={(e) => setNewEnvName(e.target.value)}
+                className="bg-zinc-900 border-zinc-800 text-zinc-200"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Type</Label>
+              <Select value={newEnvType} onValueChange={(val: any) => setNewEnvType(val)}>
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-zinc-200">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
+                  <SelectItem value="GLOBAL">Global</SelectItem>
+                  <SelectItem value="COLLECTION">Collection Specific</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newEnvType === "COLLECTION" && (
+              <div className="grid gap-2">
+                <Label>Collection</Label>
+                <Select value={newEnvCollectionId} onValueChange={setNewEnvCollectionId}>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-zinc-200">
+                    <SelectValue placeholder="Select collection" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
+                    {collections?.map((col: any) => (
+                      <SelectItem key={col.id} value={col.id}>
+                        {col.name}
+                      </SelectItem>
+                    ))}
+                    {(!collections || collections.length === 0) && (
+                      <SelectItem value="none" disabled>No collections available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="hover:bg-zinc-800 hover:text-white">Cancel</Button>
+            <Button onClick={handleCreate} disabled={newEnvType === "COLLECTION" && !newEnvCollectionId} className="bg-orange-500 hover:bg-orange-600 text-white">Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -150,6 +224,15 @@ const EnvironmentEditor = ({ env, onBack, isGlobals = false }: { env: any; onBac
   );
   const [name, setName] = useState(env.name);
   const [searchTerm, setSearchTerm] = useState("");
+
+  React.useEffect(() => {
+    setVariables(
+      Array.isArray(env.values) && env.values.length > 0 
+        ? env.values 
+        : [{ key: "", initialValue: "", currentValue: "" }]
+    );
+    setName(env.name);
+  }, [env]);
 
   const { selectedWorkspace } = useWorkspaceStore();
   const updateEnv = useUpdateEnvironment();

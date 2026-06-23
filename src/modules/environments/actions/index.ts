@@ -9,12 +9,14 @@ export const getEnvironments = async (workspaceId: string) => {
   });
 };
 
-export const createEnvironment = async (workspaceId: string, name: string) => {
+export const createEnvironment = async (workspaceId: string, name: string, type: "GLOBAL" | "COLLECTION" = "GLOBAL", collectionId?: string | null) => {
 
   return await db.environment.create({
     data: {
       workspaceId,
       name,
+      type,
+      collectionId,
       values: [],
     },
   });

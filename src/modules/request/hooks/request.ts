@@ -55,6 +55,7 @@ export function useRunRequest(requestId: string, environmentId?: string | null) 
     mutationFn: async () => await run(requestId, environmentId || undefined),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
+      queryClient.invalidateQueries({ queryKey: ["environments"] });
       //@ts-ignore
       setResponseViewerData(data);
     },
@@ -69,6 +70,7 @@ export function useRunDirectRequest() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
       queryClient.invalidateQueries({ queryKey: ["history"] });
+      queryClient.invalidateQueries({ queryKey: ["environments"] });
       setResponseViewerData(data as any);
     },
   });
