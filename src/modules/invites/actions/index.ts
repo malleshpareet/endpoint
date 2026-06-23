@@ -6,6 +6,7 @@ import { currentUser } from "@/modules/authentication/actions"
 import { MEMBER_ROLE } from "@prisma/client"
 import { randomBytes } from "crypto"
 import { verifyWorkspaceRole } from "@/modules/workspace/actions/permissions"
+import { pusherServer } from "@/lib/pusher"
 
 export const generateWorkspaceInvite = async (workspaceId: string) => {
   try {
@@ -85,6 +86,7 @@ export const inviteUserByEmail = async (workspaceId: string, email: string) => {
       data: {
         workspaceId,
         token,
+        email,
         createdById: user.id,
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), 
       }
@@ -95,9 +97,55 @@ export const inviteUserByEmail = async (workspaceId: string, email: string) => {
     const { sendInviteEmail } = await import("@/lib/mail");
     await sendInviteEmail(email, inviteLink, workspace.name, user.name || user.email || "Someone");
 
+    // Trigger Pusher event
+    await pusherServer.trigger(
+      `user-${email.replace(/[@.]/g, '-')}`,
+      'new_invite',
+      { workspaceName: workspace.name, inviterName: user.name || user.email || "Someone" }
+    );
+
     return { success: true }
   } catch (error: any) {
     console.error("Error sending invite email:", error);
     return { success: false, error: error.message };
   }
+}
+
+export const getPendingInvites = async () => {
+  const user = await currentUser();
+  if (!user || !user.email) return [];
+
+  const invites = await db.workspaceInvite.findMany({
+    where: { 
+      email: user.email,
+      OR: [
+        { expiresAt: null },
+        { expiresAt: { gt: new Date() } }
+      ]
+    },
+    include: {
+      workspace: true,
+      createdBy: true,
+    }
+  });
+
+  return invites;
+}
+
+export const rejectWorkspaceInvite = async (inviteId: string) => {
+  const user = await currentUser();
+  if (!user || !user.email) throw new Error("Unauthorized");
+
+  const invite = await db.workspaceInvite.findUnique({
+    where: { id: inviteId }
+  });
+
+  if (!invite) throw new Error("Invite not found");
+  if (invite.email !== user.email) throw new Error("Unauthorized");
+
+  await db.workspaceInvite.delete({
+    where: { id: inviteId }
+  });
+
+  return { success: true };
 }
