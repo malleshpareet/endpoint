@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select"
 import { VariableInput } from './variable-input'
 import { Button } from "@/components/ui/button"
-import { Send } from 'lucide-react'
+import { Send, Loader2 } from 'lucide-react'
 import { useRunDirectRequest } from '../hooks/request'
 import { toast } from 'sonner'
 import { useWorkspaceStore } from '@/modules/layout/stores'
@@ -147,8 +147,17 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         disabled={isPending || !tab.url}
         className="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-md transition-all disabled:opacity-40 gap-1.5"
       >
-        <Send className="w-3 h-3" />
-        Send
+        {isPending ? (
+          <>
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Sending...
+          </>
+        ) : (
+          <>
+            <Send className="w-3 h-3" />
+            Send
+          </>
+        )}
       </Button>
     </div>
   )

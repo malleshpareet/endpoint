@@ -361,6 +361,7 @@ export async function sendRequest(req: {
     const end = performance.now();
     return {
       error: error.message,
+      data: `Request Error: ${error.message}`,
       duration: Math.round(end - start),
     };
   }

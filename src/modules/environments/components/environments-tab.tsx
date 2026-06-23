@@ -36,6 +36,9 @@ const EnvironmentsTab = () => {
   const [newEnvType, setNewEnvType] = useState<"GLOBAL" | "COLLECTION">("GLOBAL");
   const [newEnvCollectionId, setNewEnvCollectionId] = useState<string>("");
 
+  const [envToDelete, setEnvToDelete] = useState<string | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   const handleCreate = async () => {
     if (!selectedWorkspace) return;
     try {
@@ -65,12 +68,15 @@ const EnvironmentsTab = () => {
     }
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteConfirm = async () => {
+    if (!envToDelete) return;
+    const envName = environments?.find((e) => e.id === envToDelete)?.name || "Environment";
     try {
-      await deleteEnv.mutateAsync(id);
-      if (activeView === id) setActiveView("list");
-      toast.success("Environment deleted");
+      await deleteEnv.mutateAsync(envToDelete);
+      if (activeView === envToDelete) setActiveView("list");
+      toast.success(`${envName} deleted`);
+      setIsDeleteOpen(false);
+      setEnvToDelete(null);
     } catch (e) {
       toast.error("Failed to delete environment");
     }
@@ -140,7 +146,11 @@ const EnvironmentsTab = () => {
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-400 hover:text-white" onClick={(e) => { e.stopPropagation(); handleDuplicate(env); }}>
                       <Copy className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={(e) => handleDelete(env.id, e)}>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={(e) => {
+                      e.stopPropagation();
+                      setEnvToDelete(env.id);
+                      setIsDeleteOpen(true);
+                    }}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -159,7 +169,7 @@ const EnvironmentsTab = () => {
       </div>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-zinc-950 border border-zinc-800 text-zinc-300">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-[425px] bg-zinc-950 border border-zinc-800 text-zinc-300">
           <DialogHeader>
             <DialogTitle>Create Environment</DialogTitle>
           </DialogHeader>
@@ -209,6 +219,21 @@ const EnvironmentsTab = () => {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="hover:bg-zinc-800 hover:text-white">Cancel</Button>
             <Button onClick={handleCreate} disabled={newEnvType === "COLLECTION" && !newEnvCollectionId} className="bg-orange-500 hover:bg-orange-600 text-white">Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent aria-describedby={undefined} className="sm:max-w-[425px] bg-zinc-950 border border-zinc-800 text-zinc-300">
+          <DialogHeader>
+            <DialogTitle>Delete Environment</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-sm text-zinc-400">
+            Are you sure you want to delete this environment? This action cannot be undone.
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsDeleteOpen(false)} className="hover:bg-zinc-800 hover:text-white">Cancel</Button>
+            <Button onClick={handleDeleteConfirm} className="bg-red-500 hover:bg-red-600 text-white">Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

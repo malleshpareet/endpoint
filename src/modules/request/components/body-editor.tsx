@@ -326,12 +326,15 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                           scrollBeyondLastLine: false,
                           fontSize: 14,
                           lineNumbers: 'on',
+                          wordWrap: 'on',
                           roundedSelection: false,
                           padding: { top: 16, bottom: 16 },
                           scrollbar: {
-                            vertical: 'visible',
-                            horizontal: 'visible',
-                            useShadows: false,
+                            vertical: 'auto',
+                            horizontal: 'auto',
+                            verticalScrollbarSize: 8,
+                            horizontalScrollbarSize: 8,
+                            alwaysConsumeMouseWheel: false,
                           }
                         }}
                         onChange={handleEditorChange}

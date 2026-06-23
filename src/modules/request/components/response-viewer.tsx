@@ -5,20 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Editor from '@monaco-editor/react';
-import { 
-  Clock, 
-  HardDrive, 
-  CheckCircle, 
-  Copy, 
-  Download, 
+import {
+  Clock,
+  HardDrive,
+  CheckCircle,
+  Copy,
+  Download,
   Filter,
   MoreHorizontal,
   Code,
   FileText,
   Settings,
-  TestTube
+  ClipboardCheck,
+  Globe
 } from 'lucide-react';
 import { sanitizeObject, sanitizeString, sanitizeHeaders } from '@/lib/sanitize';
+import { toast } from 'sonner';
 
 type HeadersMap = Record<string, string>;
 
@@ -50,8 +52,9 @@ interface Props {
   responseData: ResponseData;
 }
 
-const ResponseViewer = ({responseData}: Props) => {
+const ResponseViewer = ({ responseData }: Props) => {
   const [activeTab, setActiveTab] = useState('json');
+  const [previewPretty, setPreviewPretty] = useState(false);
 
   const getStatusColor = (status?: number): string => {
     const s = typeof status === 'number' ? status : 0;
@@ -72,7 +75,35 @@ const ResponseViewer = ({responseData}: Props) => {
 
   const copyToClipboard = (text: string) => {
     if (!navigator?.clipboard) return;
-    navigator.clipboard.writeText(text).catch(() => {/* ignore */});
+    navigator.clipboard.writeText(text).catch(() => {/* ignore */ });
+  };
+
+  const handleSave = () => {
+    const rawBody = responseData?.requestRun?.body;
+    if (!rawBody) return;
+
+    let contentType = 'text/plain';
+    if (responseData?.requestRun?.headers) {
+      const headers = responseData.requestRun.headers as Record<string, string>;
+      const ctKey = Object.keys(headers).find(k => k.toLowerCase() === 'content-type');
+      if (ctKey) contentType = headers[ctKey];
+    }
+
+    let extension = 'txt';
+    if (contentType.includes('application/json')) extension = 'json';
+    else if (contentType.includes('text/html')) extension = 'html';
+    else if (contentType.includes('application/xml') || contentType.includes('text/xml')) extension = 'xml';
+
+    const dataStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody, null, 2);
+    const blob = new Blob([dataStr], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `response-${Date.now()}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const sanitizedHeaders = sanitizeHeaders(responseData?.requestRun?.headers as any);
@@ -93,8 +124,8 @@ const ResponseViewer = ({responseData}: Props) => {
     // If parsing fails, fall back to the raw string
     const rawBody = responseData?.requestRun?.body;
     responseBody = typeof rawBody === 'string' ? sanitizeString(rawBody) : sanitizeObject(rawBody ?? {});
-    formattedJsonString = typeof responseBody === 'string' 
-      ? responseBody 
+    formattedJsonString = typeof responseBody === 'string'
+      ? responseBody
       : JSON.stringify(responseBody, null, 2);
   }
 
@@ -102,7 +133,7 @@ const ResponseViewer = ({responseData}: Props) => {
   const statusText: string | undefined = responseData.result?.statusText ?? responseData.requestRun?.statusText;
   const duration: number | undefined = responseData.result?.duration ?? responseData.requestRun?.durationMs;
   const size: number | undefined = responseData.result?.size;
-  
+
   const rawBody = responseData.requestRun?.body;
   const sanitizedRawBody = typeof rawBody === 'string' ? sanitizeString(rawBody) : JSON.stringify(sanitizeObject(rawBody ?? {}));
 
@@ -132,16 +163,18 @@ const ResponseViewer = ({responseData}: Props) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white"
+                  onClick={() => toast.info("Press Ctrl+F inside the editor to search!")}
+                >
                   <Filter className="w-4 h-4 mr-2" />
                   Filter
                 </Button>
-                <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white" onClick={handleSave}>
                   <Download className="w-4 h-4 mr-2" />
                   Save
-                </Button>
-                <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                  <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -157,22 +190,29 @@ const ResponseViewer = ({responseData}: Props) => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="px-6 border-b border-zinc-800">
                 <TabsList className="bg-transparent p-0 h-auto">
-                  <TabsTrigger 
-                    value="json" 
+                  <TabsTrigger
+                    value="json"
                     className="bg-transparent data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-gray-400 rounded-t-md rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-500 px-4 py-2"
                   >
                     <Code className="w-4 h-4 mr-2" />
                     JSON
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="raw" 
+                  <TabsTrigger
+                    value="raw"
                     className="bg-transparent data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-gray-400 rounded-t-md rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-500 px-4 py-2"
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     Raw
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="headers" 
+                  <TabsTrigger
+                    value="preview"
+                    className="bg-transparent data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-gray-400 rounded-t-md rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-500 px-4 py-2"
+                  >
+                    <Globe className="w-4 h-4 mr-2" />
+                    Preview
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="headers"
                     className="bg-transparent data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-gray-400 rounded-t-md rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-500 px-4 py-2"
                   >
                     <Settings className="w-4 h-4 mr-2" />
@@ -181,11 +221,11 @@ const ResponseViewer = ({responseData}: Props) => {
                       {Object.keys(sanitizedHeaders).length}
                     </Badge>
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="test" 
+                  <TabsTrigger
+                    value="test"
                     className="bg-transparent data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-gray-400 rounded-t-md rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-500 px-4 py-2"
                   >
-                    <TestTube className="w-4 h-4 mr-2" />
+                    <ClipboardCheck className="w-4 h-4 mr-2" />
                     Test Results
                   </TabsTrigger>
                 </TabsList>
@@ -194,9 +234,9 @@ const ResponseViewer = ({responseData}: Props) => {
               <TabsContent value="json" className="mt-0">
                 <div className="relative">
                   <div className="absolute top-4 right-4 z-10">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       className="text-gray-400 hover:text-white bg-zinc-800/50 backdrop-blur-sm"
                       onClick={() => copyToClipboard(formattedJsonString)}
                     >
@@ -237,18 +277,18 @@ const ResponseViewer = ({responseData}: Props) => {
 
               <TabsContent value="raw" className="mt-0">
                 <div className="relative">
-                    <div className="absolute top-4 right-4 z-10">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-gray-400 hover:text-white"
-                        onClick={() => copyToClipboard(sanitizedRawBody)}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="h-96">
- <Editor
+                  <div className="absolute top-4 right-4 z-10">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-gray-400 hover:text-white"
+                      onClick={() => copyToClipboard(sanitizedRawBody)}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="h-96">
+                    <Editor
                       height="100%"
                       defaultLanguage="text"
                       value={sanitizedRawBody}
@@ -275,8 +315,34 @@ const ResponseViewer = ({responseData}: Props) => {
                       }}
                       theme="vs-dark"
                     />
-                    </div>
-                      
+                  </div>
+
+                </div>
+              </TabsContent>
+
+              <TabsContent value="preview" className="mt-0">
+                <div className="flex flex-col h-96 w-full bg-white relative rounded-b-md overflow-hidden">
+                  <div className="flex items-center px-4 py-2 bg-zinc-100 text-black border-b border-zinc-300">
+                    <label className="flex items-center text-sm font-mono cursor-pointer">
+                      <span className="mr-2">Pretty print</span>
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 cursor-pointer"
+                        checked={previewPretty}
+                        onChange={(e) => setPreviewPretty(e.target.checked)}
+                      />
+                    </label>
+                  </div>
+                  <iframe
+                    title="Response Preview"
+                    srcDoc={
+                      previewPretty
+                        ? `<pre style="word-wrap: break-word; white-space: pre-wrap;">${formattedJsonString}</pre>`
+                        : (typeof rawBody === 'string' ? rawBody : '')
+                    }
+                    className="w-full flex-1 border-0"
+                    sandbox="allow-same-origin"
+                  />
                 </div>
               </TabsContent>
 
@@ -290,9 +356,9 @@ const ResponseViewer = ({responseData}: Props) => {
                             <div className="font-medium text-blue-300 text-sm">{key}</div>
                             <div className="text-gray-300 text-sm break-all">{value}</div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="text-gray-400 hover:text-white ml-2"
                             onClick={() => copyToClipboard(`${key}: ${value}`)}
                           >
