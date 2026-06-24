@@ -262,7 +262,7 @@ const KeyValueFormEditor: React.FC<KeyValueFormEditorProps> = ({
           </div>
 
           {/* Autosave enabled — changes are saved automatically */}
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-4 pr-4">
             <span className="text-xs text-zinc-500">
               Changes saved automatically
             </span>
