@@ -29,7 +29,7 @@ import { useGenerateJsonBody } from '@/modules/ai/hooks/ai-suggestion'
 import { useRequestPlaygroundStore } from '../store/useRequestStore'
 import { useWorkspaceStore } from '@/modules/layout/stores'
 import { useEnvironments, useWorkspaceGlobals } from '@/modules/environments/hooks/environments'
-
+import KeyValueFormEditor from "./key-value-form"
 
 const MonacoEditor = dynamic(
   () => import('@monaco-editor/react'),
@@ -37,7 +37,7 @@ const MonacoEditor = dynamic(
 )
 
 const bodyEditorSchema = z.object({
-  contentType: z.enum(['application/json', 'text/plain']),
+  contentType: z.enum(['application/json', 'text/plain', 'multipart/form-data', 'application/x-www-form-urlencoded']),
   body: z.string().optional(),
 })
 
@@ -45,7 +45,7 @@ type BodyEditorFormData = z.infer<typeof bodyEditorSchema>
 
 interface BodyEditorProps {
   initialData?: {
-    contentType?: 'application/json' | 'text/plain'
+    contentType?: 'application/json' | 'text/plain' | 'multipart/form-data' | 'application/x-www-form-urlencoded'
     body?: string
   }
   onSubmit: (data: BodyEditorFormData) => void
@@ -60,13 +60,13 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   const [copied, setCopied] = useState(false)
   const [showGenerateDialog, setShowGenerateDialog] = useState(false)
   const [prompt, setPrompt] = useState('')
-  const {selectedWorkspace, activeEnvironmentId} = useWorkspaceStore()
+  const { selectedWorkspace, activeEnvironmentId } = useWorkspaceStore()
   const { data: environments } = useEnvironments(selectedWorkspace?.id);
   const { data: globalVariables } = useWorkspaceGlobals(selectedWorkspace?.id);
 
-  const {tabs, activeTabId} = useRequestPlaygroundStore();
+  const { tabs, activeTabId } = useRequestPlaygroundStore();
 
-  const {mutateAsync , data , isPending , isError} = useGenerateJsonBody()
+  const { mutateAsync, data, isPending, isError } = useGenerateJsonBody()
 
   const form = useForm<BodyEditorFormData>({
     resolver: zodResolver(bodyEditorSchema),
@@ -85,6 +85,22 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
     onSubmit({ contentType: form.getValues('contentType'), body: value || '' })
   }
 
+  const handleKeyValueChange = (data: any[]) => {
+    const stringified = JSON.stringify(data);
+    form.setValue('body', stringified);
+    onSubmit({ contentType: form.getValues('contentType'), body: stringified })
+  }
+
+  const getParsedKeyValueData = () => {
+    try {
+      if (!bodyValue) return [];
+      const parsed = JSON.parse(bodyValue);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : [{ key: "", value: "", enabled: true }];
+    } catch {
+      return [{ key: "", value: "", enabled: true }];
+    }
+  }
+
   // Monaco decorations
   const monacoRef = useRef<any>(null);
   const editorRef = useRef<any>(null);
@@ -98,19 +114,20 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
 
   const updateDecorations = (value: string) => {
     if (!editorRef.current || !monacoRef.current) return;
+    if (contentType === 'multipart/form-data' || contentType === 'application/x-www-form-urlencoded') return;
 
     const regex = /\{\{([^}]+)\}\}/g;
     const matches = [];
     let match;
     const model = editorRef.current.getModel();
-    
+
     if (!model) return;
 
     while ((match = regex.exec(value)) !== null) {
       const varName = match[1];
       const envVars = environments?.find(e => e.id === activeEnvironmentId)?.values || [];
-      const isFound = (envVars as any[])?.some(v => v.key === varName) || 
-                      (globalVariables as any[])?.some(v => v.key === varName);
+      const isFound = (envVars as any[])?.some(v => v.key === varName) ||
+        (globalVariables as any[])?.some(v => v.key === varName);
 
       const startPos = model.getPositionAt(match.index);
       const endPos = model.getPositionAt(match.index + match[0].length);
@@ -129,7 +146,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
 
   useEffect(() => {
     updateDecorations(bodyValue || '');
-  }, [bodyValue, environments, globalVariables, activeEnvironmentId]);
+  }, [bodyValue, environments, globalVariables, activeEnvironmentId, contentType]);
 
   // Handle copy
   const handleCopy = async () => {
@@ -150,13 +167,10 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
 
   const onGenerateBody = async (promptText: string) => {
     try {
-     
-    
       if (bodyValue) {
         try {
           JSON.parse(bodyValue);
         } catch (e) {
-          
           console.log('Invalid existing JSON, generating new schema');
         }
       }
@@ -166,7 +180,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
         method: tabs.find(t => t.id === activeTabId)?.method || 'POST',
         endpoint: tabs.find(t => t.id === activeTabId)?.url || '/',
         context: `Generate a JSON body with the following requirements: ${promptText}`,
-       
+
       });
 
       if (result?.jsonBody) {
@@ -208,6 +222,18 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
       label: 'text/plain',
       icon: FileText,
       description: 'Plain text format'
+    },
+    {
+      value: 'multipart/form-data',
+      label: 'multipart/form-data',
+      icon: FileText,
+      description: 'Form Data'
+    },
+    {
+      value: 'application/x-www-form-urlencoded',
+      label: 'application/x-www-form-urlencoded',
+      icon: FileText,
+      description: 'URL Encoded Form'
     }
   ]
 
@@ -234,7 +260,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="w-[180px] h-7 bg-zinc-700 border-zinc-600 text-xs">
+                          <SelectTrigger className="w-[200px] h-7 bg-zinc-700 border-zinc-600 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -260,7 +286,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
             </div>
             <div className="flex items-center gap-2">
               {contentType === 'application/json' && (
-                
+
                 <Button
                   type="button"
                   variant="ghost"
@@ -274,16 +300,16 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                 </Button>
               )}
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleFormat}
-                  className="h-7 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
-                  title="Format JSON"
-                >
-                  <AlignLeft className="h-3 w-3" />
-                </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleFormat}
+                className="h-7 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
+                title="Format JSON"
+              >
+                <AlignLeft className="h-3 w-3" />
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
@@ -309,12 +335,25 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
 
           {/* Editor */}
           <div className="relative h-80">
-            <FormField
-              control={form.control}
-              name="body"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
+            {contentType === 'multipart/form-data' || contentType === 'application/x-www-form-urlencoded' ? (
+              <div className="h-full overflow-auto bg-zinc-900 border-t border-zinc-700">
+                <KeyValueFormEditor
+                  initialData={getParsedKeyValueData()}
+                  onSubmit={handleKeyValueChange}
+                  placeholder={{
+                    key: "Key",
+                    value: "Value",
+                    description: "Description",
+                  }}
+                />
+              </div>
+            ) : (
+              <FormField
+                control={form.control}
+                name="body"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
                       <MonacoEditor
                         height="320px"
                         value={field.value}
@@ -340,16 +379,17 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                         onChange={handleEditorChange}
                         onMount={handleEditorDidMount}
                       />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
 
           {/* Footer */}
           <div className="bg-zinc-900 border-t border-zinc-700 px-4 py-3 flex items-center justify-between">
             <div className="text-xs text-zinc-400">
-              Lines: {bodyValue?.split('\n').length || 0} | 
+              Lines: {bodyValue?.split('\n').length || 0} |
               Characters: {bodyValue?.length || 0}
             </div>
           </div>
