@@ -3,6 +3,7 @@ import { signIn } from '@/lib/auth-client'
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import { BsShieldLock } from "react-icons/bs";
 import Image from 'next/image'
+import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import { Spinner } from '@/components/ui/spinner'
 import { LoginBackground } from '@/components/ui/login-background';
@@ -131,13 +132,13 @@ const LoginPage = () => {
                         <BsShieldLock className="w-3 h-3 text-white/20" />
                         <p className="text-[11.5px] text-white/25 text-center leading-relaxed">
                             By signing in, you agree to our{" "}
-                            <span className="text-white/40 hover:text-white/60 cursor-pointer transition-colors underline underline-offset-2">
+                            <Link href="/terms" className="text-white/40 hover:text-white/60 transition-colors underline underline-offset-2">
                                 Terms
-                            </span>{" "}
+                            </Link>{" "}
                             &{" "}
-                            <span className="text-white/40 hover:text-white/60 cursor-pointer transition-colors underline underline-offset-2">
+                            <Link href="/privacy" className="text-white/40 hover:text-white/60 transition-colors underline underline-offset-2">
                                 Privacy Policy
-                            </span>
+                            </Link>
                         </p>
                     </div>
                 </div>

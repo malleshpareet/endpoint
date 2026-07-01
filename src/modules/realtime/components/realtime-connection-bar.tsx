@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PlugZap, Plug, AlertCircle } from 'lucide-react'
+import { PlugZap, Plug, AlertCircle, Link2, Link2Off } from 'lucide-react'
 import React, { useState, useCallback, useEffect } from 'react'
 import { useWsStore } from '../hooks/useWs'
 
@@ -18,149 +18,113 @@ const RealtimeConnectionBar = () => {
   
   const [url, setUrl] = useState(connectedUrl || '')
 
-  // keep local input in sync with connectedUrl
   useEffect(() => {
     setUrl(connectedUrl || '')
   }, [connectedUrl])
 
   const onConnect = useCallback(() => {
-    if (!url.trim()) {
-      alert('Please enter a WebSocket URL')
-      return
-    }
+    if (!url.trim()) return
 
     if (isConnected) {
-      // Disconnect if already connected
       disconnect()
     } else {
-      // Connect to WebSocket
       connect(url, {
-        onOpen: (event) => {
-          console.log('Successfully connected to:', url)
-        },
-        onClose: (event) => {
-          console.log('Disconnected from WebSocket')
-        },
-        onError: (error) => {
-          console.error('WebSocket connection error:', error)
-        },
-        onMessage: (event) => {
-          console.log('Received message:', event.data)
-        },
+        onOpen: () => console.log('Connected to:', url),
+        onClose: () => console.log('Disconnected'),
+        onError: (e) => console.error('WebSocket error:', e),
+        onMessage: (e) => console.log('Message:', e.data),
         autoReconnect: true,
         reconnectDelay: 3000
       })
     }
   }, [url, isConnected, connect, disconnect])
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      onConnect()
-    }
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') onConnect()
   }, [onConnect])
 
-  const getConnectionColor = () => {
-    switch (status) {
-      case 'connected':
-        return 'bg-green-500 hover:bg-green-600'
-      case 'connecting':
-      case 'reconnecting':
-        return 'bg-yellow-500 hover:bg-yellow-600'
-      case 'error':
-        return 'bg-red-500 hover:bg-red-600'
-      default:
-        return 'bg-zinc-700 hover:bg-zinc-600'
-    }
+  const statusConfig = {
+    connected: {
+      dot: 'bg-emerald-400',
+      label: 'Connected',
+      labelClass: 'text-emerald-400',
+      btnClass: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
+      btnText: 'Disconnect',
+      icon: <Link2Off size={14} />,
+    },
+    connecting: {
+      dot: 'bg-amber-400 animate-pulse',
+      label: 'Connecting…',
+      labelClass: 'text-amber-400',
+      btnClass: 'bg-muted text-muted-foreground border border-border cursor-not-allowed',
+      btnText: 'Connecting…',
+      icon: <PlugZap size={14} className="animate-pulse" />,
+    },
+    reconnecting: {
+      dot: 'bg-amber-400 animate-pulse',
+      label: `Reconnecting (${reconnectAttempts}/${maxReconnectAttempts})`,
+      labelClass: 'text-amber-400',
+      btnClass: 'bg-muted text-muted-foreground border border-border cursor-not-allowed',
+      btnText: 'Reconnecting…',
+      icon: <PlugZap size={14} className="animate-pulse" />,
+    },
+    error: {
+      dot: 'bg-red-400',
+      label: error || 'Error',
+      labelClass: 'text-red-400',
+      btnClass: 'bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/20',
+      btnText: 'Retry',
+      icon: <Link2 size={14} />,
+    },
+    disconnected: {
+      dot: 'bg-zinc-500',
+      label: 'Disconnected',
+      labelClass: 'text-zinc-400',
+      btnClass: 'bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/20',
+      btnText: 'Connect',
+      icon: <Link2 size={14} />,
+    },
   }
 
-  const getConnectionIcon = () => {
-    switch (status) {
-      case 'connected':
-        return <Plug size={20} />
-      case 'connecting':
-      case 'reconnecting':
-        return <PlugZap size={20} className="animate-pulse" />
-      case 'error':
-        return <AlertCircle size={20} />
-      default:
-        return <PlugZap size={20} />
-    }
-  }
-
-  const getButtonText = () => {
-    switch (status) {
-      case 'connected':
-        return 'Disconnect'
-      case 'connecting':
-        return 'Connecting...'
-      case 'reconnecting':
-        return `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`
-      case 'error':
-        return 'Retry'
-      default:
-        return 'Connect'
-    }
-  }
-
-  const getStatusText = () => {
-    switch (status) {
-      case 'reconnecting':
-        return `reconnecting (${reconnectAttempts}/${maxReconnectAttempts})`
-      default:
-        return status
-    }
-  }
+  const cfg = statusConfig[status] || statusConfig.disconnected
+  const isDisabled = status === 'connecting' || status === 'reconnecting'
 
   return (
-    <div className='flex flex-row items-center justify-between bg-zinc-900 rounded-md px-2 py-2 w-full'>
-      <div className="flex flex-row items-center gap-2 flex-1">
-        <Input 
-          value={url} 
+    <div className="flex items-center gap-3">
+      {/* Protocol badge */}
+      <div className="shrink-0 px-2.5 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/20 text-xs font-mono font-semibold text-violet-400 select-none">
+        WS
+      </div>
+
+      {/* URL Input */}
+      <div className="relative flex-1">
+        <Input
+          value={url}
           onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder="Enter WebSocket URL (e.g., ws://localhost:8080)"
-          className="flex-1 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-400"
-          disabled={status === 'connecting' || status === 'reconnecting'}
+          onKeyDown={handleKeyDown}
+          placeholder="ws://localhost:8080 or wss://echo.websocket.org"
+          disabled={isDisabled || isConnected}
+          className="font-mono text-sm h-9 pr-3 bg-muted/40 border-border/60 focus-visible:ring-violet-500/30 placeholder:text-muted-foreground/50"
         />
       </div>
-      
-      <div className="flex items-center gap-2 ">
-        {/* Connection Status Indicator */}
-        <div className="flex px-2 flex-col items-end text-xs text-zinc-400">
-          <div className="flex items-center gap-1">
-            <div 
-              className={`w-2 h-2 rounded-full ${
-                status === 'connected' ? 'bg-green-500' :
-                status === 'connecting' || status === 'reconnecting' ? 'bg-yellow-500 animate-pulse' :
-                status === 'error' ? 'bg-red-500' : 'bg-zinc-500'
-              }`}
-            />
-            <span className="capitalize">{getStatusText()}</span>
-          </div>
-          {connectedUrl && (
-            <div className="text-[10px] text-zinc-500 max-w-32 truncate">
-              {connectedUrl}
-            </div>
-          )}
-          {error && (
-            <div className="text-[10px] text-red-400 max-w-32 truncate">
-              {error}
-            </div>
-          )}
-        </div>
-        
-        <Button
-          type='button'
-          onClick={onConnect}
-          disabled={status === 'connecting' || status === 'reconnecting'}
-          className={`ml-2 text-white font-bold transition-colors ${getConnectionColor()}`}
-        >
-          <span className="flex items-center gap-2">
-            {getConnectionIcon()}
-            {getButtonText()}
-          </span>
-        </Button>
+
+      {/* Status indicator */}
+      <div className="shrink-0 flex items-center gap-1.5 text-xs min-w-0">
+        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+        <span className={`${cfg.labelClass} truncate max-w-28 hidden sm:block`}>{cfg.label}</span>
       </div>
+
+      {/* Action button */}
+      <Button
+        type="button"
+        size="sm"
+        onClick={onConnect}
+        disabled={isDisabled}
+        className={`shrink-0 h-9 px-4 text-xs font-medium gap-1.5 rounded-md transition-all ${cfg.btnClass}`}
+      >
+        {cfg.icon}
+        {cfg.btnText}
+      </Button>
     </div>
   )
 }
