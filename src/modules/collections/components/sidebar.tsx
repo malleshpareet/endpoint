@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Archive, Clock, Code, Share2, Users, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box, Mail } from 'lucide-react';
+import { Archive, Clock, Code, Share2, Users, ExternalLink, HelpCircle, Plus, Search, Upload, Loader, Box, Mail, Copy, Check, Link2 } from 'lucide-react';
 import React, { useState, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useCollections } from '@/modules/collections/hooks/collections';
 import CreateCollection from './create-collection';
 import EmptyCollections from './empty-collections';
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { parsePostmanCollection } from '@/lib/httply-parser';
 import { importCollectionAction } from '../actions';
+import { generateWorkspaceInvite } from '@/modules/invites/actions';
 
 
 interface Props {
@@ -25,9 +27,38 @@ interface Props {
 const TabbedSidebar = ({ currentWorkspace }: Props) => {
     const [activeTab, setActiveTab] = useState('Collections');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
+    const [isShareOpen, setIsShareOpen] = useState(false);
+    const [shareLink, setShareLink] = useState<string | null>(null);
+    const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isImporting, setIsImporting] = useState(false);
     const queryClient = useQueryClient();
+
+    const handleOpenShare = async () => {
+        setShareLink(null);
+        setLinkCopied(false);
+        setIsShareOpen(true);
+        if (!currentWorkspace?.id) return;
+        setIsGeneratingLink(true);
+        const result = await generateWorkspaceInvite(currentWorkspace.id);
+        setIsGeneratingLink(false);
+        if (result.success && result.link) {
+            setShareLink(result.link);
+        } else {
+            toast.error(result.error || 'Could not generate invite link.');
+            setIsShareOpen(false);
+        }
+    };
+
+    const handleCopyShareLink = () => {
+        if (!shareLink) return;
+        navigator.clipboard.writeText(shareLink).then(() => {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        }).catch(() => toast.error('Failed to copy link.'));
+    };
 
     const { data: collections, isPending, isError } = useCollections(currentWorkspace?.id);
     const { activeTabId } = useRequestPlaygroundStore();
@@ -106,13 +137,181 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                                 <span className="font-medium text-zinc-300">Collections</span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <button className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05] transition-all">
-                                    <HelpCircle className="w-3.5 h-3.5" />
-                                </button>
-                                <button className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05] transition-all">
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                </button>
+                                <Hint label="Help" side="bottom">
+                                    <button
+                                        onClick={() => setIsHelpOpen(true)}
+                                        className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05] transition-all"
+                                    >
+                                        <HelpCircle className="w-3.5 h-3.5" />
+                                    </button>
+                                </Hint>
+                                <Hint label="Share workspace" side="bottom">
+                                    <button
+                                        onClick={handleOpenShare}
+                                        className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05] transition-all"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </button>
+                                </Hint>
+
+                            {/* Share Modal */}
+                            {isShareOpen && (
+                                <div
+                                    className="fixed inset-0 z-50 flex items-center justify-center"
+                                    onClick={() => setIsShareOpen(false)}
+                                >
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                                    <div
+                                        className="relative w-full max-w-sm mx-4 rounded-2xl border p-6"
+                                        style={{
+                                            background: "rgba(13,13,15,0.99)",
+                                            borderColor: "rgba(255,255,255,0.08)",
+                                            boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 32px 64px rgba(0,0,0,0.8)",
+                                        }}
+                                        onClick={e => e.stopPropagation()}
+                                    >
+                                        {/* Header */}
+                                        <div className="flex items-center justify-between mb-5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,0.15)" }}>
+                                                    <Link2 className="w-3.5 h-3.5 text-indigo-400" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-[13.5px] font-semibold text-white/90 leading-tight">Invite to workspace</h3>
+                                                    <p className="text-[11px] text-zinc-600 leading-tight mt-0.5">Link expires in 7 days</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setIsShareOpen(false)}
+                                                className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.06] transition-all text-lg leading-none"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+
+                                        {/* QR Code area */}
+                                        <div
+                                            className="flex items-center justify-center rounded-xl p-5 mb-4"
+                                            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                                        >
+                                            {isGeneratingLink ? (
+                                                <div className="flex flex-col items-center gap-3 py-4">
+                                                    <Loader className="w-5 h-5 text-indigo-400 animate-spin" />
+                                                    <p className="text-[11.5px] text-zinc-600">Generating invite link...</p>
+                                                </div>
+                                            ) : shareLink ? (
+                                                <div className="p-2 rounded-lg" style={{ background: "#fff" }}>
+                                                    <QRCodeSVG
+                                                        value={shareLink}
+                                                        size={160}
+                                                        bgColor="#ffffff"
+                                                        fgColor="#0d0d0f"
+                                                        level="M"
+                                                    />
+                                                </div>
+                                            ) : null}
+                                        </div>
+
+                                        {/* Link row */}
+                                        {shareLink && (
+                                            <div
+                                                className="flex items-center gap-2 rounded-lg px-3 py-2 mb-5"
+                                                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                                            >
+                                                <span className="flex-1 text-[11px] text-zinc-500 truncate font-mono">
+                                                    {shareLink}
+                                                </span>
+                                                <button
+                                                    onClick={handleCopyShareLink}
+                                                    className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all"
+                                                    style={{
+                                                        background: linkCopied ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)",
+                                                        border: linkCopied ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                                                        color: linkCopied ? "rgb(129,140,248)" : "rgba(255,255,255,0.6)",
+                                                    }}
+                                                >
+                                                    {linkCopied
+                                                        ? <><Check className="w-3 h-3" /> Copied!</>
+                                                        : <><Copy className="w-3 h-3" /> Copy</>
+                                                    }
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Footer note */}
+                                        <p className="text-[11px] text-zinc-600 text-center">
+                                            Anyone with this link can join <span className="text-zinc-400">{currentWorkspace?.name}</span> as a viewer.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                             </div>
+
+                            {/* Help Modal */}
+                            {isHelpOpen && (
+                                <div
+                                    className="fixed inset-0 z-50 flex items-center justify-center"
+                                    onClick={() => setIsHelpOpen(false)}
+                                >
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                                    <div
+                                        className="relative w-full max-w-md mx-4 rounded-2xl border p-6"
+                                        style={{
+                                            background: "rgba(15,15,17,0.98)",
+                                            borderColor: "rgba(255,255,255,0.08)",
+                                            boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 48px rgba(0,0,0,0.7)",
+                                        }}
+                                        onClick={e => e.stopPropagation()}
+                                    >
+                                        {/* Header */}
+                                        <div className="flex items-center justify-between mb-5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,0.15)" }}>
+                                                    <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
+                                                </div>
+                                                <h3 className="text-[14px] font-semibold text-white/90">Collections — Help</h3>
+                                            </div>
+                                            <button
+                                                onClick={() => setIsHelpOpen(false)}
+                                                className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.06] transition-all text-lg leading-none"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+
+                                        {/* Body */}
+                                        <div className="space-y-4 text-[13px] text-zinc-400 leading-relaxed">
+                                            <div className="p-3 rounded-lg border" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                                                <p className="text-zinc-300 font-medium mb-1">📁 What are Collections?</p>
+                                                <p>Collections are groups of saved API requests. They help you organise, reuse, and share requests with your team.</p>
+                                            </div>
+                                            <div className="p-3 rounded-lg border" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                                                <p className="text-zinc-300 font-medium mb-1">➕ Creating a Collection</p>
+                                                <p>Click <span className="text-white/70">New</span> to create a collection, then add requests inside it. You can nest folders for better organisation.</p>
+                                            </div>
+                                            <div className="p-3 rounded-lg border" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                                                <p className="text-zinc-300 font-medium mb-1">📤 Importing Collections</p>
+                                                <p>Use <span className="text-white/70">Import</span> to load a Postman-format <code className="text-indigo-300/80 bg-indigo-500/10 px-1 rounded text-[11px]">.json</code> collection directly into your workspace.</p>
+                                            </div>
+                                            <div className="p-3 rounded-lg border" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                                                <p className="text-zinc-300 font-medium mb-1">👥 Sharing with Team</p>
+                                                <p>Collections are shared across all members of your workspace automatically. Invite teammates from the <span className="text-white/70">Team</span> tab.</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="mt-5 pt-4 border-t flex justify-end" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                                            <button
+                                                onClick={() => setIsHelpOpen(false)}
+                                                className="px-4 py-1.5 rounded-lg text-[12.5px] font-medium text-white/70 hover:text-white transition-colors"
+                                                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                                            >
+                                                Got it
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Search */}
