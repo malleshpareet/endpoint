@@ -1,259 +1,212 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useWsStore } from '../hooks/useWs'
-import { ChevronUp, ChevronDown, Trash2, Copy, Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
+import { Trash2, Copy, ArrowUpRight, ArrowDownLeft, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const RealtimeClientServerLogsTable = () => {
   const { messages, clearMessages } = useWsStore()
-  const [selectedMessageIndex, setSelectedMessageIndex] = useState<number>(-1)
-  const tableRef = useRef<HTMLDivElement>(null)
-  const rowRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1)
+  const listRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive and nothing selected
   useEffect(() => {
-    if (messages.length > 0 && selectedMessageIndex === -1) {
-      scrollToBottom()
+    if (messages.length > 0 && selectedIndex === -1) {
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
     }
-  }, [messages.length])
+  }, [messages.length, selectedIndex])
 
-  // Update row refs array when messages change
-  useEffect(() => {
-    rowRefs.current = rowRefs.current.slice(0, messages.length)
-  }, [messages.length])
-
-  const scrollToBottom = () => {
-    if (tableRef.current) {
-      tableRef.current.scrollTop = tableRef.current.scrollHeight
-    }
-  }
-
-  const scrollToRow = (index: number) => {
-    const row = rowRefs.current[index]
-    if (row && tableRef.current) {
-      const containerRect = tableRef.current.getBoundingClientRect()
-      const rowRect = row.getBoundingClientRect()
-      
-      if (rowRect.top < containerRect.top || rowRect.bottom > containerRect.bottom) {
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
-    }
-  }
-
-  const handleNavigateUp = () => {
-    if (messages.length === 0) return
-    
-    const newIndex = selectedMessageIndex === -1 
-      ? messages.length - 1 
-      : Math.max(0, selectedMessageIndex - 1)
-    
-    setSelectedMessageIndex(newIndex)
-    scrollToRow(newIndex)
-  }
-
-  const handleNavigateDown = () => {
-    if (messages.length === 0) return
-    
-    const newIndex = selectedMessageIndex === -1 
-      ? 0 
-      : selectedMessageIndex + 1 < messages.length 
-        ? selectedMessageIndex + 1 
-        : -1
-
-    setSelectedMessageIndex(newIndex)
-    
-    if (newIndex === -1) {
-      scrollToBottom()
-    } else {
-      scrollToRow(newIndex)
-    }
-  }
-
-  const handleRowClick = (index: number) => {
-    setSelectedMessageIndex(selectedMessageIndex === index ? -1 : index)
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      console.log('Copied to clipboard')
-    }).catch(err => {
-      console.error('Failed to copy: ', err)
-    })
-  }
-
-  const formatTimestamp = (timestamp: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
+  const formatTimestamp = (ts: Date) =>
+    new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      fractionalSecondDigits: 3
-    }).format(timestamp)
-  }
+      fractionalSecondDigits: 3,
+    }).format(ts)
 
-  const formatMessageData = (data: any) => {
+  const formatData = (data: any) => {
     if (typeof data === 'string') {
-      try {
-        return JSON.stringify(JSON.parse(data), null, 2)
-      } catch {
-        return data
-      }
+      try { return JSON.stringify(JSON.parse(data), null, 2) } catch { return data }
     }
     return JSON.stringify(data, null, 2)
   }
 
-  const getMessageTypeIcon = (type: 'sent' | 'received') => {
-    return type === 'sent' 
-      ? <ArrowUpRight size={16} className="text-blue-400" />
-      : <ArrowDownLeft size={16} className="text-green-400" />
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text).catch(console.error)
   }
 
- 
+  const selectedMessage = selectedIndex >= 0 ? messages[selectedIndex] : null
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 rounded-md">
+    <div className="flex flex-col h-full rounded-lg border border-border/60 overflow-hidden bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60 bg-muted/30 shrink-0">
         <div className="flex items-center gap-2">
-          <Clock size={18} className="text-zinc-400" />
-          <h3 className="text-white font-medium">Message Logs</h3>
-          <span className="text-xs text-zinc-500">({messages.length} messages)</span>
+          <span className="text-xs font-medium text-foreground">Message Logs</span>
+          {messages.length > 0 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-mono">
+              {messages.length}
+            </span>
+          )}
         </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Navigation arrows */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleNavigateUp}
-            disabled={messages.length === 0}
-            className="h-8 w-8 p-0 text-zinc-400 hover:text-white hover:bg-zinc-700"
-            title="Navigate up (previous message)"
-          >
-            <ChevronUp size={16} />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleNavigateDown}
-            disabled={messages.length === 0}
-            className="h-8 w-8 p-0 text-zinc-400 hover:text-white hover:bg-zinc-700"
-            title="Navigate down (next message)"
-          >
-            <ChevronDown size={16} />
-          </Button>
-
-          <div className="w-px h-6 bg-zinc-700 mx-1" />
-
-          {/* Clear messages */}
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="flex items-center gap-1">
+          {selectedIndex >= 0 && (
+            <button
+              onClick={() => setSelectedIndex(-1)}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <X size={11} />
+              Deselect
+            </button>
+          )}
+          <button
             onClick={clearMessages}
             disabled={messages.length === 0}
-            className="h-8 w-8 p-0 text-zinc-400 hover:text-red-400 hover:bg-zinc-700"
-            title="Clear all messages"
+            title="Clear all"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30"
           >
-            <Trash2 size={16} />
-          </Button>
+            <Trash2 size={11} />
+            Clear
+          </button>
         </div>
       </div>
 
-      {/* Messages Table */}
-      <div ref={tableRef} className="flex-1 overflow-auto">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-32 text-zinc-500">
-            No messages yet. Connect to a WebSocket to see message logs.
-          </div>
-        ) : (
-          <div className="space-y-1 p-2">
-            {messages.map((message, index) => (
-              <div
-                key={message.id}
-                ref={(el) => { rowRefs.current[index] = el; }}
-                className={`
-                  border-l-4 rounded-r-md p-3 cursor-pointer transition-all duration-200
-               
-                  ${selectedMessageIndex === index 
-                    ? 'ring-2 ring-zinc-400 bg-zinc-800/50' 
-                    : 'hover:bg-zinc-800/30'
-                  }
-                `}
-                onClick={() => handleRowClick(index)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {getMessageTypeIcon(message.type)}
-                    <span className={`text-sm font-medium capitalize ${
-                      message.type === 'sent' ? 'text-blue-300' : 'text-green-300'
-                    }`}>
-                      {message.type}
-                    </span>
-                    <span className="text-xs text-zinc-500">
-                      #{index + 1}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">
-                      {formatTimestamp(message.timestamp)}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+      {/* Body */}
+      <div className="flex flex-1 min-h-0">
+        {/* Message list */}
+        <div
+          ref={listRef}
+          className={`overflow-y-auto flex-1 min-w-0 ${selectedMessage ? 'border-r border-border/60' : ''}`}
+        >
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground select-none">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="opacity-30">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span className="text-xs">No messages yet</span>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/30">
+              {messages.map((msg, i) => {
+                const isSent = msg.type === 'sent'
+                const isSelected = selectedIndex === i
+                const preview = typeof msg.data === 'string' ? msg.data : JSON.stringify(msg.data)
+
+                return (
+                  <div
+                    key={msg.id}
+                    onClick={() => setSelectedIndex(isSelected ? -1 : i)}
+                    className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer transition-colors group ${
+                      isSelected
+                        ? 'bg-violet-500/8 border-l-2 border-violet-500'
+                        : 'hover:bg-muted/40 border-l-2 border-transparent'
+                    }`}
+                  >
+                    {/* Direction icon */}
+                    <div className={`shrink-0 mt-0.5 p-1 rounded ${isSent ? 'bg-blue-500/10' : 'bg-emerald-500/10'}`}>
+                      {isSent
+                        ? <ArrowUpRight size={12} className="text-blue-400" />
+                        : <ArrowDownLeft size={12} className="text-emerald-400" />
+                      }
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-[11px] font-medium ${isSent ? 'text-blue-400' : 'text-emerald-400'}`}>
+                          {isSent ? 'Sent' : 'Received'}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {formatTimestamp(msg.timestamp)}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/50">#{i + 1}</span>
+                      </div>
+                      <div className="text-[12px] text-muted-foreground font-mono truncate">
+                        {preview}
+                      </div>
+                    </div>
+
+                    {/* Copy button - shows on hover */}
+                    <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        copyToClipboard(message.raw || formatMessageData(message.data))
+                        copyText(msg.raw || preview)
                       }}
-                      className="h-6 w-6 p-0 text-zinc-400 hover:text-white"
-                      title="Copy message"
+                      className="shrink-0 p-1 rounded text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all"
+                      title="Copy"
                     >
-                      <Copy size={12} />
-                    </Button>
+                      <Copy size={11} />
+                    </button>
                   </div>
-                </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
-                <div className="text-xs text-zinc-300">
-                  <div className="font-mono bg-zinc-800 rounded p-2 overflow-x-auto">
-                    {selectedMessageIndex === index ? (
-                      <pre className="whitespace-pre-wrap break-words">
-                        {formatMessageData(message.data)}
-                      </pre>
-                    ) : (
-                      <div className="truncate">
-                        {typeof message.data === 'string' 
-                          ? message.data 
-                          : JSON.stringify(message.data)
-                        }
-                      </div>
-                    )}
-                  </div>
-                </div>
+        {/* Detail panel — shows when a message is selected */}
+        {selectedMessage && (
+          <div className="w-80 shrink-0 flex flex-col overflow-hidden">
+            {/* Detail header */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 bg-muted/20 shrink-0">
+              <span className="text-xs font-medium text-foreground">
+                Message #{selectedIndex + 1}
+              </span>
+              <button
+                onClick={() => copyText(selectedMessage.raw || formatData(selectedMessage.data))}
+                className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Copy size={11} />
+                Copy
+              </button>
+            </div>
 
-                {selectedMessageIndex === index && message.raw && message.raw !== formatMessageData(message.data) && (
-                  <div className="mt-2 text-xs text-zinc-400">
-                    <div className="text-zinc-500 mb-1">Raw:</div>
-                    <div className="font-mono bg-zinc-800 rounded p-2 overflow-x-auto">
-                      <pre className="whitespace-pre-wrap break-words">
-                        {message.raw}
-                      </pre>
-                    </div>
-                  </div>
-                )}
+            {/* Metadata */}
+            <div className="px-3 py-2 border-b border-border/40 bg-muted/10 shrink-0 space-y-1">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Direction</span>
+                <span className={selectedMessage.type === 'sent' ? 'text-blue-400' : 'text-emerald-400'}>
+                  {selectedMessage.type === 'sent' ? '↑ Sent' : '↓ Received'}
+                </span>
               </div>
-            ))}
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Time</span>
+                <span className="text-foreground font-mono">{formatTimestamp(selectedMessage.timestamp)}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Size</span>
+                <span className="text-foreground font-mono">
+                  {(selectedMessage.raw || JSON.stringify(selectedMessage.data)).length} bytes
+                </span>
+              </div>
+            </div>
+
+            {/* Raw data */}
+            <div className="flex-1 overflow-auto p-3">
+              <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">
+                {formatData(selectedMessage.data)}
+              </pre>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Footer with selection info */}
-      {selectedMessageIndex >= 0 && (
-        <div className="px-4 py-2 border-t border-zinc-700 text-xs text-zinc-500">
-          Message {selectedMessageIndex + 1} of {messages.length} selected
-          {selectedMessageIndex < messages.length - 1 && (
-            <span> • Press ↓ for next</span>
-          )}
-          {selectedMessageIndex > 0 && (
-            <span> • Press ↑ for previous</span>
+      {/* Footer */}
+      {messages.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-1.5 border-t border-border/40 bg-muted/20 shrink-0">
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <ArrowUpRight size={10} className="text-blue-400" />
+              {messages.filter(m => m.type === 'sent').length} sent
+            </span>
+            <span className="flex items-center gap-1">
+              <ArrowDownLeft size={10} className="text-emerald-400" />
+              {messages.filter(m => m.type === 'received').length} received
+            </span>
+          </div>
+          {selectedIndex >= 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              {selectedIndex + 1} / {messages.length}
+            </span>
           )}
         </div>
       )}

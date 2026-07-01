@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Send, Copy, Trash2, RefreshCw } from 'lucide-react'
+import { Send, Copy, Trash2, RotateCcw } from 'lucide-react'
 import { useWsStore } from '../hooks/useWs'
 import Editor from '@monaco-editor/react'
 import { toast } from 'sonner'
@@ -17,9 +17,8 @@ const RealtimeMessageEditor = () => {
   } = useWsStore()
   
   const [isSending, setIsSending] = useState(false)
-  const [lastSent, setLastSent] = useState('')
-  const editorRef = useRef(null)
-  const monacoRef = useRef(null)
+  const editorRef = useRef<any>(null)
+  const monacoRef = useRef<any>(null)
 
   useEffect(() => {
     if (!draftMessage) {
@@ -30,49 +29,40 @@ const RealtimeMessageEditor = () => {
   }, [])
 
   const handleSendMessage = useCallback(async () => {
-    if (!status || status !== 'connected') {
-      toast.info('WebSocket is not connected!')
+    if (status !== 'connected') {
+      toast.info('WebSocket is not connected')
+      return
+    }
+    if (!draftMessage?.trim()) {
+      toast.info('Message is empty')
       return
     }
 
-    if (!draftMessage || !draftMessage.trim()) {
-      toast.info('Please enter a message!')
-      return
-    }
-
+    setIsSending(true)
     try {
-      setIsSending(true)
-      
-      // Try to parse JSON to validate
-      let messageToSend
+      let messageToSend: any
       try {
         messageToSend = JSON.parse(draftMessage)
-
-      } catch (e) {
-        // If not valid JSON, send as string
+      } catch {
         messageToSend = draftMessage
       }
 
       const success = send(messageToSend)
       if (success) {
-        setLastSent(draftMessage)
-        toast.success('Message sent successfully')
+        toast.success('Message sent')
       } else {
-        toast.error('Failed to send message')
+        toast.error('Failed to send')
       }
-    } catch (error) {
-      console.error('Error sending message:', error)
-      toast.error('Error sending message: ' + (error instanceof Error ? error.message : String(error)))
+    } catch (err) {
+      toast.error('Error: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
       setIsSending(false)
     }
-  }, [draftMessage, send, isConnected])
+  }, [draftMessage, send, status])
 
-  // Initialize Monaco Editor
   const handleEditorDidMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor
     monacoRef.current = monaco
-
 
     monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
       validate: true,
@@ -81,18 +71,19 @@ const RealtimeMessageEditor = () => {
       enableSchemaRequest: true
     })
 
-    // Set editor options
     editor.updateOptions({
-      theme: 'vs-dark',
-      fontSize: 14,
+      fontSize: 13,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       wordWrap: 'on',
       formatOnPaste: true,
-      formatOnType: true
+      formatOnType: true,
+      lineNumbers: 'on',
+      renderLineHighlight: 'line',
+      lineDecorationsWidth: 0,
+      lineNumbersMinChars: 3,
     })
 
-    // Add keyboard shortcut for sending (Ctrl+Enter)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       handleSendMessage()
     })
@@ -100,137 +91,118 @@ const RealtimeMessageEditor = () => {
 
   const handleFormatJSON = useCallback(() => {
     try {
-      const parsed = JSON.parse(draftMessage)
-      const formatted = JSON.stringify(parsed, null, 2)
+      const formatted = JSON.stringify(JSON.parse(draftMessage), null, 2)
       setDraftMessage(formatted)
-      if (editorRef.current) {
-        // @ts-ignore
-        editorRef.current.setValue(formatted)
-      }
-    } catch (error) {
-      alert('Invalid JSON format')
+      editorRef.current?.setValue(formatted)
+    } catch {
+      toast.error('Invalid JSON')
     }
   }, [draftMessage, setDraftMessage])
 
   const handleCopyMessage = useCallback(() => {
     navigator.clipboard.writeText(draftMessage)
-      .then(() => {
-        console.log('Message copied to clipboard')
-      })
-      .catch(err => {
-        console.error('Failed to copy message:', err)
-      })
+      .then(() => toast.success('Copied to clipboard'))
+      .catch(() => toast.error('Failed to copy'))
   }, [draftMessage])
 
   const handleClearMessage = useCallback(() => {
-    const emptyMessage = '{\n  \n}'
-    setDraftMessage(emptyMessage)
-    if (editorRef.current) {
-      // @ts-ignore
-      editorRef.current.setValue(emptyMessage)
-      // @ts-ignore
-      editorRef.current.focus()
-    }
+    const empty = '{\n  \n}'
+    setDraftMessage(empty)
+    editorRef.current?.setValue(empty)
+    editorRef.current?.focus()
   }, [setDraftMessage])
 
-  
-
   return (
-    <div className="flex flex-col space-y-4 bg-zinc-800 rounded-lg p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Message Editor</h3>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs px-2 py-1 rounded ${
-            status === 'connected' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-          }`}>
-            {status === 'connected' ? 'Connected' : 'Disconnected'}
+    <div className="flex flex-col gap-3 h-full min-h-0">
+      {/* Editor panel */}
+      <div className="flex flex-col rounded-lg border border-border/60 overflow-hidden bg-[#1e1e1e] shrink-0">
+        {/* Editor toolbar */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border/40 bg-zinc-900/80">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Message Body</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 font-mono">JSON</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleFormatJSON}
+              title="Format JSON"
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+            >
+              <RotateCcw size={11} />
+              <span>Format</span>
+            </button>
+            <button
+              onClick={handleCopyMessage}
+              title="Copy"
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+            >
+              <Copy size={11} />
+              <span>Copy</span>
+            </button>
+            <button
+              onClick={handleClearMessage}
+              title="Clear"
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              <Trash2 size={11} />
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Monaco Editor */}
+        <Editor
+          height="160px"
+          language="json"
+          theme="vs-dark"
+          value={draftMessage}
+          onChange={(val) => setDraftMessage(val || '')}
+          onMount={handleEditorDidMount}
+          options={{
+            fontSize: 13,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            automaticLayout: true,
+            tabSize: 2,
+            lineNumbers: 'on',
+            renderWhitespace: 'none',
+            contextmenu: true,
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            scrollbar: { verticalScrollbarSize: 4, horizontalScrollbarSize: 4 },
+          }}
+          loading={
+            <div className="w-full h-40 bg-[#1e1e1e] flex items-center justify-center">
+              <span className="text-zinc-500 text-xs">Loading editor…</span>
+            </div>
+          }
+        />
+
+        {/* Send bar */}
+        <div className="flex items-center justify-between px-3 py-2 border-t border-border/40 bg-zinc-900/80">
+          <span className="text-[11px] text-zinc-500">
+            <kbd className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono text-[10px]">Ctrl</kbd>
+            {' + '}
+            <kbd className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono text-[10px]">Enter</kbd>
+            {' to send • JSON validation enabled'}
           </span>
-        </div>
-      </div>
-
-    
-      {/* Editor */}
-      <div className="relative">
-        <div className="border border-zinc-700 rounded-lg overflow-hidden">
-          {/* Monaco Editor */}
-          <Editor
-            height="150px"
-            language="json"
-            theme="vs-dark"
-            value={draftMessage}
-            onChange={(value) => setDraftMessage(value || '')}
-            onMount={handleEditorDidMount}
-            options={{
-              fontSize: 14,
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              wordWrap: 'on',
-              formatOnPaste: true,
-              formatOnType: true,
-              automaticLayout: true,
-              tabSize: 2,
-              insertSpaces: true,
-              folding: true,
-              lineNumbers: 'on',
-              renderWhitespace: 'boundary',
-              cursorStyle: 'line',
-              contextmenu: true,
-              mouseWheelZoom: false
-            }}
-            loading={
-              <div className="w-full h-64 bg-zinc-900 flex items-center justify-center">
-                <div className="text-zinc-400 text-sm">Loading Monaco Editor...</div>
-              </div>
-            }
-          />
-        </div>
-        
-        {/* Editor Actions */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-70 hover:opacity-100 transition-opacity">
           <Button
+            onClick={handleSendMessage}
+            disabled={status !== 'connected' || isSending}
             size="sm"
-            variant="ghost"
-            onClick={handleFormatJSON}
-            className="h-6 w-6 p-0 text-zinc-400 hover:text-white hover:bg-zinc-700"
+            className="h-7 px-3 text-xs gap-1.5 bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-40"
           >
-            <RefreshCw size={12} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleCopyMessage}
-            className="h-6 w-6 p-0 text-zinc-400 hover:text-white hover:bg-zinc-700"
-          >
-            <Copy size={12} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleClearMessage}
-            className="h-6 w-6 p-0 text-zinc-400 hover:text-white hover:bg-zinc-700"
-          >
-            <Trash2 size={12} />
+            <Send size={12} />
+            {isSending ? 'Sending…' : 'Send'}
           </Button>
         </div>
       </div>
 
-      {/* Send Button and Info */}
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-zinc-400">
-          Press Ctrl+Enter to send • JSON auto-validation enabled
-        </div>
-        <Button
-          onClick={handleSendMessage}
-          disabled={status !== 'connected' || isSending}
-          className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium"
-        >
-          <Send size={16} className="mr-2" />
-          {isSending ? 'Sending...' : 'Send Message'}
-        </Button>
+      {/* Logs panel */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <RealtimeClientServerLogsTable />
       </div>
-
-            <RealtimeClientServerLogsTable />
     </div>
   )
 }
