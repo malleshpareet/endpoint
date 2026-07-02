@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import db from "./db";
 import { env } from "./env";
@@ -15,7 +16,7 @@ export const auth = betterAuth({
                 before: async (user: any) => {
                     const settings = await db.systemSettings.findUnique({ where: { id: "global" } });
                     if (settings && !settings.allowSignups) {
-                        throw new Error("Signups are currently disabled.");
+                        throw new APIError("FORBIDDEN", { message: "Signups are currently disabled." });
                     }
                     return { data: user };
                 },

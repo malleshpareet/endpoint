@@ -4,9 +4,24 @@ import { FaGoogle, FaGithub } from "react-icons/fa";
 import { BsShieldLock } from "react-icons/bs";
 import Image from 'next/image'
 import Link from 'next/link'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { Spinner } from '@/components/ui/spinner'
+import { toast } from 'sonner'
+import { useSearchParams } from 'next/navigation'
 import { LoginBackground } from '@/components/ui/login-background';
+
+const ErrorToaster = () => {
+    const searchParams = useSearchParams();
+    const error = searchParams.get('error');
+
+    useEffect(() => {
+        if (error) {
+            toast.error(error);
+        }
+    }, [error]);
+
+    return null;
+}
 
 const LoginPage = () => {
     const [loading, setLoading] = useState<'github' | 'google' | null>(null)
@@ -19,6 +34,10 @@ const LoginPage = () => {
     return (
         <main className="relative flex w-full min-h-screen items-center justify-center px-4" style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
             <LoginBackground />
+            
+            <Suspense fallback={null}>
+                <ErrorToaster />
+            </Suspense>
 
             {/* Loading Overlay */}
             {loading !== null && (
@@ -73,7 +92,10 @@ const LoginPage = () => {
                             disabled={loading !== null}
                             onClick={async () => {
                                 setLoading('google');
-                                await signIn.social({ provider: 'google', callbackURL: "/" });
+                                const res = await signIn.social({ provider: 'google', callbackURL: "/" });
+                                if (res?.error) {
+                                    toast.error(res.error.message || "An error occurred");
+                                }
                                 setLoading(null);
                             }}
                             className="relative w-full flex items-center justify-center gap-3 rounded-xl px-4 py-2.5 text-[13.5px] font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
@@ -98,7 +120,10 @@ const LoginPage = () => {
                             disabled={loading !== null}
                             onClick={async () => {
                                 setLoading('github');
-                                await signIn.social({ provider: 'github', callbackURL: "/" });
+                                const res = await signIn.social({ provider: 'github', callbackURL: "/" });
+                                if (res?.error) {
+                                    toast.error(res.error.message || "An error occurred");
+                                }
                                 setLoading(null);
                             }}
                             className="relative w-full flex items-center justify-center gap-3 rounded-xl px-4 py-2.5 text-[13.5px] font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
