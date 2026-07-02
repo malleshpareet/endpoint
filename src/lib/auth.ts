@@ -12,6 +12,13 @@ export const auth = betterAuth({
     databaseHooks: {
         user: {
             create: {
+                before: async (user: any) => {
+                    const settings = await db.systemSettings.findUnique({ where: { id: "global" } });
+                    if (settings && !settings.allowSignups) {
+                        throw new Error("Signups are currently disabled.");
+                    }
+                    return { data: user };
+                },
                 after: async (user: any) => {
                     try {
                         const { sendWelcomeEmail } = await import("./mail");
