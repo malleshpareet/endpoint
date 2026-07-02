@@ -1,5 +1,5 @@
 import { EllipsisVertical, FilePlus, Folder, Trash, Edit, ChevronDown, ChevronRight, Loader, Upload, Download } from 'lucide-react';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +45,32 @@ const CollectionFolder = ({ collection }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
   const queryClient = useQueryClient();
+
+  // Keyboard shortcuts: Ctrl/⌘ + R = Add Request, E = Edit, D = Delete
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+      // Don't fire if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      // Don't fire if any modal is already open
+      if (isEditOpen || isDeleteOpen || isAddRequestOpen || requestToEdit || requestToDelete) return;
+
+      if (isMod && e.key === 'r') {
+        e.preventDefault();
+        setIsAddRequestOpen(true);
+      } else if (isMod && e.key === 'e') {
+        e.preventDefault();
+        setIsEditOpen(true);
+      } else if (isMod && e.key === 'd') {
+        e.preventDefault();
+        setIsDeleteOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEditOpen, isDeleteOpen, isAddRequestOpen, requestToEdit, requestToDelete]);
 
   const { data: requestData, isPending, isError } = useGetAllRequestFromCollection(collection.id);
 
@@ -171,7 +197,7 @@ const CollectionFolder = ({ collection }: Props) => {
                         <FilePlus className='text-green-400 mr-2 w-4 h-4' />
                         Add Request
                       </div>
-                      <span className='text-xs text-zinc-400 bg-zinc-700 px-1 rounded'>⌘R</span>
+                      <span className='text-xs text-zinc-400 bg-zinc-700 px-1 rounded'>Ctrl+R</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleImportClick} disabled={isImporting}>
@@ -196,7 +222,7 @@ const CollectionFolder = ({ collection }: Props) => {
                         <Edit className='text-blue-400 mr-2 w-4 h-4' />
                         Edit
                       </div>
-                      <span className='text-xs text-zinc-400 bg-zinc-700 px-1 rounded'>⌘E</span>
+                      <span className='text-xs text-zinc-400 bg-zinc-700 px-1 rounded'>Ctrl+E</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
@@ -205,7 +231,7 @@ const CollectionFolder = ({ collection }: Props) => {
                         <Trash className='text-red-400 mr-2 w-4 h-4' />
                         Delete
                       </div>
-                      <span className='text-xs text-zinc-400 bg-zinc-700 px-1 rounded'>⌘D</span>
+                      <span className='text-xs text-zinc-400 bg-zinc-700 px-1 rounded'>Ctrl+D</span>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
