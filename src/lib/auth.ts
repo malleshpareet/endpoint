@@ -21,6 +21,17 @@ export const auth = betterAuth({
                     }
                 }
             }
+        },
+        session: {
+            create: {
+                before: async (session: any) => {
+                    const user = await db.user.findUnique({ where: { id: session.userId } });
+                    if (user?.banned) {
+                        throw new Error(user.banReason || "Your account has been suspended.");
+                    }
+                    return { data: session };
+                }
+            }
         }
     },
 
