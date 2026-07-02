@@ -25,6 +25,7 @@ import {
 import { RotateCcw, Copy, Check, Code, AlignLeft, FileText, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGenerateJsonBody } from '@/modules/ai/hooks/ai-suggestion'
+import { useAIFeatures } from "@/components/ai-feature-provider";
 
 import { useRequestPlaygroundStore } from '../store/useRequestStore'
 import { useWorkspaceStore } from '@/modules/layout/stores'
@@ -67,6 +68,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   const { tabs, activeTabId } = useRequestPlaygroundStore();
 
   const { mutateAsync, data, isPending, isError } = useGenerateJsonBody()
+  const enableAIFeatures = useAIFeatures();
 
   const form = useForm<BodyEditorFormData>({
     resolver: zodResolver(bodyEditorSchema),
@@ -285,7 +287,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {contentType === 'application/json' && (
+              {contentType === 'application/json' && enableAIFeatures && (
 
                 <Button
                   type="button"

@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/query-provider";
 import { HotkeysProviders } from "@/components/hot-key-provider";
 import { ConsoleSanitizerProvider } from "@/components/console-sanitizer-provider";
+import { AIFeatureProvider } from "@/components/ai-feature-provider";
 import db from "@/lib/db";
 
 
@@ -56,13 +57,15 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   let isMaintenanceMode = false;
+  let enableAIFeatures = true;
   try {
     const settings = await db.systemSettings.findUnique({
       where: { id: "global" }
     });
     isMaintenanceMode = settings?.maintenanceMode ?? false;
+    enableAIFeatures = settings?.enableAIFeatures ?? true;
   } catch (error) {
-    console.error("Failed to check maintenance mode:", error);
+    console.error("Failed to check system settings:", error);
   }
 
   if (isMaintenanceMode) {
@@ -136,7 +139,9 @@ export default async function RootLayout({
                     }
                   }}
                 />
-                {children}
+                <AIFeatureProvider enableAIFeatures={enableAIFeatures}>
+                  {children}
+                </AIFeatureProvider>
               </HotkeysProviders>
             </ThemeProvider>
           </QueryProvider>
