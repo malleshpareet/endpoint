@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Hint } from "@/components/ui/hint";
 import { Loader, Plus, User, Trash } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
   Select,
@@ -95,6 +96,11 @@ const WorkSpace = ({ user }: { user?: UserProps }) => {
                     className="relative z-30 h-7 w-7 hover:bg-red-400/10 hover:border-red-400"
                     onClick={(e) => {
                       e.stopPropagation();
+                      const isInvited = user && selectedWorkspace?.ownerId !== user.id;
+                      if (isInvited) {
+                        toast.error("You cannot delete an invited workspace.");
+                        return;
+                      }
                       setIsDeleteModalOpen(true);
                     }}
                   >

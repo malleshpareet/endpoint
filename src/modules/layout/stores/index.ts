@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 type Workspace = {
   id: string;
   name: string;
+  ownerId: string;
 };
 
 interface WorkspaceState {
