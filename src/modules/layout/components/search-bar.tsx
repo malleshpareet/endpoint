@@ -13,6 +13,8 @@ import {
 
 const SearchBar = () => {
   const [open, setOpen] = useState(false)
+  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)
+  const modKey = isMac ? '⌘' : 'Ctrl'
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -39,7 +41,7 @@ const SearchBar = () => {
           <span className="text-xs">Search</span>
         </span>
         <span className="flex items-center gap-0.5">
-          <kbd className="px-1.5 py-0.5 text-[10px] font-medium bg-white/[0.06] text-zinc-500 rounded border border-white/[0.08]">⌘</kbd>
+          <kbd className="px-1.5 py-0.5 text-[10px] font-medium bg-white/[0.06] text-zinc-500 rounded border border-white/[0.08]">{modKey}</kbd>
           <kbd className="px-1.5 py-0.5 text-[10px] font-medium bg-white/[0.06] text-zinc-500 rounded border border-white/[0.08]">K</kbd>
         </span>
       </button>
