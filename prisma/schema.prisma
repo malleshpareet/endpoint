@@ -223,3 +223,13 @@ model RequestRun {
 
   createdAt DateTime @default(now())
 }
+
+model SystemSettings {
+  id               String   @id @default("global")
+  maintenanceMode  Boolean  @default(false)
+  allowSignups     Boolean  @default(true)
+  enableAIFeatures Boolean  @default(true)
+  requireAdmin2FA  Boolean  @default(false) // default false makes more sense for generic setup
+
+  updatedAt DateTime @default(now()) @updatedAt
+}
