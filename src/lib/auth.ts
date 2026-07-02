@@ -3,7 +3,7 @@ import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import db from "./db";
 import { env } from "./env";
-
+import { pusherServer } from "./pusher";
 
 export const auth = betterAuth({
     database: prismaAdapter(db, {
@@ -26,6 +26,17 @@ export const auth = betterAuth({
                         await sendWelcomeEmail(user.email, user.name || "there");
                     } catch (error) {
                         console.error("Failed to send welcome email:", error);
+                    }
+                    
+                    try {
+                        // Notify admin dashboard of new user
+                        await pusherServer.trigger("admin-notifications", "alert", {
+                            type: "user_registered",
+                            title: "New User Registered",
+                            message: `${user.email} just created an account.`
+                        });
+                    } catch (error) {
+                        console.error("Failed to trigger pusher event:", error);
                     }
                 }
             }
