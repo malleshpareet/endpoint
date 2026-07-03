@@ -1,6 +1,7 @@
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { currentUser } from '@/modules/authentication/actions'
 import Header from '@/modules/layout/components/header'
+import { OnboardingTour } from '@/components/onboarding-tour'
 
 import { initializeWorkspace } from '@/modules/workspace/actions'
 import TabbedLeftPanel from '@/modules/workspace/components/tabbed-left-panel'
@@ -20,6 +21,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
     
     return (
         <>
+            <OnboardingTour />
             {/* @ts-ignore */}
             <Header user={user}/>
             <InviteListener email={user.email} />

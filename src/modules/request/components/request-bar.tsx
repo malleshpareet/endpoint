@@ -121,7 +121,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
           onChange={(e) => updateTab(tab.id, { url: e.target.value })}
           onPaste={handlePaste}
           placeholder="Enter URL or paste a cURL command..."
-          className="flex-1 bg-transparent border-none text-sm text-zinc-200 placeholder:text-zinc-600 focus:ring-0 focus:outline-none px-1 min-w-0"
+          className="tour-request-url flex-1 bg-transparent border-none text-sm text-zinc-200 placeholder:text-zinc-600 focus:ring-0 focus:outline-none px-1 min-w-0"
         />
       </div>
 
@@ -129,7 +129,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         value={activeEnvironmentId || "no-env"}
         onValueChange={(val) => setActiveEnvironmentId(val === "no-env" ? null : val)}
       >
-        <SelectTrigger className="w-36 bg-[#1a1a1e] border border-white/[0.08] text-zinc-400 text-xs h-9 rounded-md hover:border-white/[0.15] transition-colors">
+        <SelectTrigger className="tour-environment-select w-36 bg-[#1a1a1e] border border-white/[0.08] text-zinc-400 text-xs h-9 rounded-md hover:border-white/[0.15] transition-colors">
           <Box className="w-3 h-3 mr-1.5 text-zinc-500 shrink-0" />
           <SelectValue placeholder="No Environment" />
         </SelectTrigger>
@@ -145,7 +145,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         type='submit'
         onClick={onSendRequest}
         disabled={isPending || !tab.url}
-        className="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-md transition-all disabled:opacity-40 gap-1.5"
+        className="tour-send-btn h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-md transition-all disabled:opacity-40 gap-1.5"
       >
         {isPending ? (
           <>

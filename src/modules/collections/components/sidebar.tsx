@@ -387,7 +387,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
     };
 
     return (
-        <div className="flex h-full bg-[#0f0f11] w-full overflow-hidden">
+        <div className="tour-sidebar flex h-full bg-[#0f0f11] w-full overflow-hidden">
             {/* Icon tab strip */}
             <div className="w-11 flex-shrink-0 border-r border-white/[0.06] flex flex-col items-center py-3 gap-1">
                 {sidebarItems.map((item, index) => {

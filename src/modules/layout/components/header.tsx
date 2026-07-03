@@ -1,5 +1,5 @@
 "use client"
-import { Maximize2, Minimize2, RefreshCw } from 'lucide-react'
+import { Maximize2, Minimize2, RefreshCw, HelpCircle } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -12,6 +12,7 @@ import InviteMember from './invite-memeber'
 import WorkSpace from './workspace'
 import NotificationBell from './notification-bell'
 import { Hint } from '@/components/ui/hint'
+import { useTourStore } from '@/modules/layout/stores/useTourStore'
 
 interface Props {
   user: UserProps
@@ -20,6 +21,7 @@ interface Props {
 const Header = ({ user }: Props) => {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const setRunTour = useTourStore((state) => state.setRun)
   const queryClient = useQueryClient()
   const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)
   const modKey = isMac ? '⌘' : 'Ctrl'
@@ -85,6 +87,14 @@ const Header = ({ user }: Props) => {
             className='flex items-center justify-center w-7 h-7 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06] transition-all disabled:opacity-40'
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-indigo-400' : ''}`} />
+          </button>
+        </Hint>
+        <Hint label="Start Tour" side="bottom">
+          <button
+            onClick={() => setRunTour(true)}
+            className='flex items-center justify-center w-7 h-7 rounded-md text-zinc-500 hover:text-indigo-300 hover:bg-white/[0.06] transition-all'
+          >
+            <HelpCircle className='w-3.5 h-3.5' />
           </button>
         </Hint>
         <InviteMember />
