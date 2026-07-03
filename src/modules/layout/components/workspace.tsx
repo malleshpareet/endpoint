@@ -32,8 +32,14 @@ const WorkSpace = ({ user }: { user?: UserProps }) => {
 
 
   useEffect(() => {
-    if (workspaces && workspaces.length > 0 && !selectedWorkspace) {
-      setSelectedWorkspace(workspaces[0]);
+    if (workspaces && workspaces.length > 0) {
+      // Check if current selected workspace actually exists in the fetched list
+      const isValid = selectedWorkspace && workspaces.some(w => w.id === selectedWorkspace.id);
+      
+      if (!isValid) {
+        const personalWorkspace = workspaces.find((w) => w.name === "Personal Workspace");
+        setSelectedWorkspace(personalWorkspace || workspaces[0]);
+      }
     }
   }, [workspaces, selectedWorkspace, setSelectedWorkspace]);
 
