@@ -77,7 +77,7 @@ const SaveRequestToCollectionModal = ({
     [REST_METHOD.PUT]: "text-yellow-500",
     [REST_METHOD.DELETE]: "text-red-500",
     [REST_METHOD.PATCH]: "text-orange-500",
-
+    [REST_METHOD.QUERY]: "text-pink-500",
   };
 
 

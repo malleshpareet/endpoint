@@ -108,7 +108,7 @@ export function parsePostmanCollection(jsonString: string): ParsedCollection {
 
       let method = (req.method || "GET").toUpperCase();
       // Ensure method is valid REST_METHOD
-      if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      if (!["GET", "POST", "PUT", "PATCH", "DELETE", "QUERY"].includes(method)) {
         method = "GET";
       }
 

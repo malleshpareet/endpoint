@@ -183,6 +183,7 @@ enum REST_METHOD {
   PUT
   PATCH
   DELETE
+  QUERY
 }
 
 model Request {

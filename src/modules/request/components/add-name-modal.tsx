@@ -74,7 +74,7 @@ const AddNameModal = ({
               try {
                 const result = await mutateAsync({
                   workspaceName: tab.workspaceId || "Default Workspace",
-                  method: (tab.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE") || "GET",
+                  method: (tab.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "QUERY") || "GET",
                   url: tab.url || "",
                   description: `Request in collection ${tab.collectionId || ""}`
                 });
