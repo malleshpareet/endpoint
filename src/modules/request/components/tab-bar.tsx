@@ -10,6 +10,7 @@ const methodColors: Record<string, { text: string; bg: string }> = {
   PUT:    { text: "text-amber-400",   bg: "bg-amber-500/10" },
   DELETE: { text: "text-red-400",     bg: "bg-red-500/10" },
   PATCH:  { text: "text-purple-400",  bg: "bg-purple-500/10" },
+  QUERY:  { text: "text-pink-400",    bg: "bg-pink-500/10" },
 };
 
 export default function TabBar() {

@@ -91,6 +91,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
     PUT: "text-amber-400",
     DELETE: "text-red-400",
     PATCH: "text-purple-400",
+    QUERY: "text-pink-400",
   };
 
   return (
@@ -110,6 +111,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
               <SelectItem value="PUT" className="text-amber-400 text-xs font-bold">PUT</SelectItem>
               <SelectItem value="PATCH" className="text-purple-400 text-xs font-bold">PATCH</SelectItem>
               <SelectItem value="DELETE" className="text-red-400 text-xs font-bold">DELETE</SelectItem>
+              <SelectItem value="QUERY" className="text-pink-400 text-xs font-bold">QUERY</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
