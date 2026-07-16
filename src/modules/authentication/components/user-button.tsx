@@ -56,15 +56,21 @@ export default function UserButton({
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-   const onSignOut = async()=>{
+   const onSignOut = async () => {
     await authClient.signOut({
-      fetchOptions:{
-        onSuccess:()=>{
-          router.push("/sign-in")
-        }
-      }
-    })
-  }
+      fetchOptions: {
+        onSuccess: () => {
+          // Use replace() so the workspace is removed from the browser history
+          // stack — pressing Back after logout won't navigate back to the
+          // authenticated state.
+          router.replace("/sign-in");
+          // Refresh server-component cache so stale authenticated layouts
+          // are not served if the user somehow revisits via history.
+          router.refresh();
+        },
+      },
+    });
+  };
 
   const handleLogout = async () => {
   
