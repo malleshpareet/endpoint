@@ -94,6 +94,7 @@ const AuthorizationEditor = ({ initialData, onSubmit }: Props) => {
           value={(authData[field] as string) || ""}
           onChange={(e) => updateField(field, e.target.value)}
           placeholder={placeholder || label}
+          inputClassName="px-3 py-2 min-h-[40px]"
         />
       </div>
     </div>

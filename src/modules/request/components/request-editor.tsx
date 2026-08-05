@@ -8,10 +8,10 @@ import ResponseViewer from "./response-viewer";
 
 
 export default function RequestEditor() {
-  const { tabs, activeTabId, updateTab ,responseViewerData
-
+  const { tabs, activeTabId, updateTab, responses
   } = useRequestPlaygroundStore();
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+  const responseViewerData = activeTabId ? responses[activeTabId] : null;
 
   if (!activeTab) return null;
 

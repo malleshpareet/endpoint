@@ -3,6 +3,7 @@ export interface ParsedCurl {
   method: string;
   headers: { key: string; value: string }[];
   body: string;
+  bodyContentType?: string;
 }
 
 export function parseCurl(curlCommand: string): ParsedCurl | null {
@@ -86,6 +87,44 @@ export function parseCurl(curlCommand: string): ParsedCurl | null {
       if (i + 1 < tokens.length) {
         result.body = tokens[++i];
         if (result.method === "GET") result.method = "POST";
+      }
+    } else if (token === "-F" || token === "--form") {
+      if (i + 1 < tokens.length) {
+        const formStr = tokens[++i];
+        const splitIdx = formStr.indexOf("=");
+        if (splitIdx > 0) {
+          const key = formStr.slice(0, splitIdx);
+          const value = formStr.slice(splitIdx + 1);
+          
+          if (!result.bodyContentType || result.bodyContentType !== "multipart/form-data") {
+            result.bodyContentType = "multipart/form-data";
+            result.body = "[]"; 
+          }
+          
+          let currentBody = [];
+          try {
+            currentBody = JSON.parse(result.body);
+          } catch (e) {}
+          
+          if (value.startsWith("@")) {
+             currentBody.push({
+               key: key,
+               value: value.slice(1),
+               type: "file",
+               enabled: true
+             });
+          } else {
+             currentBody.push({
+               key: key,
+               value: value,
+               type: "text",
+               enabled: true
+             });
+          }
+          
+          result.body = JSON.stringify(currentBody);
+          if (result.method === "GET") result.method = "POST";
+        }
       }
     } else if (token.startsWith("-") || token === "curl") {
       // Ignore other flags

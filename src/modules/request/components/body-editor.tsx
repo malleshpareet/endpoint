@@ -31,6 +31,7 @@ import { useRequestPlaygroundStore } from '../store/useRequestStore'
 import { useWorkspaceStore } from '@/modules/layout/stores'
 import { useEnvironments, useWorkspaceGlobals } from '@/modules/environments/hooks/environments'
 import KeyValueFormEditor from "./key-value-form"
+import MultipartFormEditor, { type MultipartItem } from "./multipart-form-editor"
 
 const MonacoEditor = dynamic(
   () => import('@monaco-editor/react'),
@@ -46,7 +47,7 @@ type BodyEditorFormData = z.infer<typeof bodyEditorSchema>
 
 interface BodyEditorProps {
   initialData?: {
-    contentType?: 'application/json' | 'text/plain' | 'multipart/form-data' | 'application/x-www-form-urlencoded'
+    contentType?: string
     body?: string
   }
   onSubmit: (data: BodyEditorFormData) => void
@@ -61,6 +62,9 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   const [copied, setCopied] = useState(false)
   const [showGenerateDialog, setShowGenerateDialog] = useState(false)
   const [prompt, setPrompt] = useState('')
+  const [bodyStore, setBodyStore] = useState<Record<string, string>>({
+    [initialData.contentType || 'application/json']: initialData.body || ''
+  })
   const { selectedWorkspace, activeEnvironmentId } = useWorkspaceStore()
   const { data: environments } = useEnvironments(selectedWorkspace?.id);
   const { data: globalVariables } = useWorkspaceGlobals(selectedWorkspace?.id);
@@ -71,12 +75,15 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   const enableAIFeatures = useAIFeatures();
 
   const form = useForm<BodyEditorFormData>({
-    resolver: zodResolver(bodyEditorSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(bodyEditorSchema) as any,
     defaultValues: {
-      contentType: initialData.contentType || 'application/json',
+      contentType: (initialData.contentType || 'application/json') as BodyEditorFormData['contentType'],
       body: initialData.body || ''
     },
   })
+
+
 
   const contentType = form.watch('contentType')
   const bodyValue = form.watch('body')
@@ -100,6 +107,24 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
       return Array.isArray(parsed) && parsed.length > 0 ? parsed : [{ key: "", value: "", enabled: true }];
     } catch {
       return [{ key: "", value: "", enabled: true }];
+    }
+  }
+
+  const getParsedMultipartData = (): MultipartItem[] => {
+    try {
+      if (!bodyValue) return [];
+      const parsed = JSON.parse(bodyValue);
+      if (!Array.isArray(parsed) || parsed.length === 0) return [{ key: "", value: "", type: "text", enabled: true }];
+      // Upgrade plain key-value items that lack a `type` field
+      return parsed.map((item: any) => ({
+        key: item.key || "",
+        value: item.value || "",
+        type: item.type || "text",
+        fileName: item.fileName,
+        enabled: item.enabled ?? true,
+      }));
+    } catch {
+      return [{ key: "", value: "", type: "text", enabled: true }];
     }
   }
 
@@ -256,10 +281,20 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                     <FormItem>
                       <Select
                         onValueChange={(val: any) => {
+                          const prevType = form.getValues('contentType');
+                          const currentBody = form.getValues('body');
+                          
+                          const newStore = { ...bodyStore, [prevType]: currentBody || '' };
+                          const newBody = newStore[val] || '';
+                          
+                          setBodyStore(newStore);
+                          
+                          form.setValue('body', newBody);
+                          onSubmit({ contentType: val, body: newBody });
+                          
                           field.onChange(val);
-                          onSubmit({ contentType: val, body: form.getValues('body') });
                         }}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger className="w-[200px] h-7 bg-zinc-700 border-zinc-600 text-xs">
@@ -337,7 +372,18 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
 
           {/* Editor */}
           <div className="relative h-80">
-            {contentType === 'multipart/form-data' || contentType === 'application/x-www-form-urlencoded' ? (
+            {contentType === 'multipart/form-data' ? (
+              <div className="h-full overflow-auto bg-zinc-900 border-t border-zinc-700">
+                <MultipartFormEditor
+                  initialData={getParsedMultipartData()}
+                  onSubmit={(items) => {
+                    const stringified = JSON.stringify(items);
+                    form.setValue('body', stringified);
+                    onSubmit({ contentType: form.getValues('contentType'), body: stringified });
+                  }}
+                />
+              </div>
+            ) : contentType === 'application/x-www-form-urlencoded' ? (
               <div className="h-full overflow-auto bg-zinc-900 border-t border-zinc-700">
                 <KeyValueFormEditor
                   initialData={getParsedKeyValueData()}

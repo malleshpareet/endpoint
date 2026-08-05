@@ -39,8 +39,9 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
   };
 
   const getBodyData = () => {
+    const contentType = (tab.bodyContentType as any) || 'application/json';
     return {
-      contentType: 'application/json' as const,
+      contentType,
       body: tab.body || ''
     };
   };
@@ -62,7 +63,7 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
   };
 
   const handleBodyChange = (data: { contentType: string; body?: string }) => {
-    updateTab(tab.id, { body: data.body || '' });
+    updateTab(tab.id, { body: data.body || '', bodyContentType: data.contentType });
   };
 
   const handleAuthorizationChange = (authString: string) => {
@@ -96,6 +97,7 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
 
       <TabsContent value="parameters" >
         <KeyValueFormEditor
+          key={`params-${tab.id}`}
           initialData={getParametersData()}
           onSubmit={handleParametersChange}
           placeholder={{
@@ -108,6 +110,7 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
 
       <TabsContent value="authorization">
         <AuthorizationEditor
+          key={`auth-${tab.id}`}
           initialData={tab.authorization}
           onSubmit={handleAuthorizationChange}
         />
@@ -115,6 +118,7 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
 
       <TabsContent value="headers">
         <KeyValueFormEditor
+          key={`headers-${tab.id}`}
           initialData={getHeadersData()}
           onSubmit={handleHeadersChange}
           placeholder={{
@@ -127,13 +131,14 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
 
       <TabsContent value="body" className="p-0 h-full overflow-hidden flex-1 data-[state=active]:flex">
         <BodyEditor
+          key={`body-${tab.id}`}
           initialData={getBodyData()}
           onSubmit={handleBodyChange}
         />
       </TabsContent>
 
       <TabsContent value="scripts" className="p-0 h-full overflow-hidden flex-1 data-[state=active]:flex flex-col">
-        <ScriptsTab tab={tab} updateTab={updateTab} />
+        <ScriptsTab key={`scripts-${tab.id}`} tab={tab} updateTab={updateTab} />
       </TabsContent>
     </Tabs>
   );

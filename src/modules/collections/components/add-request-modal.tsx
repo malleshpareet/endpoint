@@ -30,6 +30,7 @@ const SaveRequestToCollectionModal = ({
     method: REST_METHOD;
     url: string;
     body?: string;
+    bodyContentType?: string;
     headers?: string;
     parameters?: string;
     authorization?: string;
@@ -104,6 +105,7 @@ const SaveRequestToCollectionModal = ({
         method: requestMethod,
         name: requestName.trim(),
         body: requestData?.body,
+        bodyContentType: requestData?.bodyContentType,
         headers: requestData?.headers,
         parameters: requestData?.parameters,
         authorization: requestData?.authorization,

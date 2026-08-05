@@ -198,6 +198,7 @@ model Request {
   preRequestScript String?
   testScript       String?
 
+  bodyContentType String? // added for keeping track of the selected body tab
   body     Json? // request body (JSON / text)
   response Json? // optional: save last response
 

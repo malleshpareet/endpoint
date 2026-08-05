@@ -49,21 +49,23 @@ export function useSaveRequest(id: string) {
 
 export function useRunRequest(requestId: string, environmentId?: string | null) {
 
-  const { setResponseViewerData } = useRequestPlaygroundStore();
+  const { setResponseViewerData, activeTabId } = useRequestPlaygroundStore();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => await run(requestId, environmentId || undefined),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
       queryClient.invalidateQueries({ queryKey: ["environments"] });
-      //@ts-ignore
-      setResponseViewerData(data);
+      if (activeTabId) {
+        //@ts-ignore
+        setResponseViewerData(activeTabId, data);
+      }
     },
   });
 }
 
 export function useRunDirectRequest() {
-  const { setResponseViewerData } = useRequestPlaygroundStore();
+  const { setResponseViewerData, activeTabId } = useRequestPlaygroundStore();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (requestData: any) => await runDirect(requestData),
@@ -71,7 +73,9 @@ export function useRunDirectRequest() {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
       queryClient.invalidateQueries({ queryKey: ["history"] });
       queryClient.invalidateQueries({ queryKey: ["environments"] });
-      setResponseViewerData(data as any);
+      if (activeTabId) {
+        setResponseViewerData(activeTabId, data as any);
+      }
     },
   });
 }

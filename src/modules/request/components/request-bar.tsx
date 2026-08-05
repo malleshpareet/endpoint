@@ -45,6 +45,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         headers: safeParse(tab.headers),
         parameters: safeParse(tab.parameters),
         body: safeParse(tab.body, null),
+        bodyContentType: tab.bodyContentType || 'application/json',
         authorization: tab.authorization,
         environmentId: activeEnvironmentId,
         workspaceId: selectedWorkspace?.id,
@@ -77,7 +78,8 @@ const RequestBar = ({ tab, updateTab }: Props) => {
           url: parsed.url,
           method: parsed.method as any,
           headers: JSON.stringify(combinedHeaders),
-          body: parsed.body || tab.body
+          body: parsed.body || tab.body,
+          ...(parsed.bodyContentType ? { bodyContentType: parsed.bodyContentType as any } : {})
         });
         toast.success("Imported cURL command!");
       }
@@ -101,7 +103,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
           value={tab.method}
           onValueChange={(value) => updateTab(tab.id, { method: value })}
         >
-          <SelectTrigger className={`w-[76px] border-none bg-transparent shadow-none px-0 h-auto text-xs font-bold tracking-wide ${methodStyle[tab.method] || "text-zinc-400"}`}>
+          <SelectTrigger className={`w-auto border-none bg-transparent shadow-none px-0 h-auto text-xs font-bold tracking-wide ${methodStyle[tab.method] || "text-zinc-400"}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[#1a1a1e] border border-white/[0.1] shadow-xl rounded-lg">

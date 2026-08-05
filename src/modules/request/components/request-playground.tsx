@@ -63,6 +63,7 @@ export default function PlaygroundPage() {
             method: activeTab.method as REST_METHOD,
             name: activeTab.title || "Untitled Request",
             body: activeTab.body,
+            bodyContentType: activeTab.bodyContentType,
             headers: activeTab.headers,
             parameters: activeTab.parameters,
             authorization: activeTab.authorization,
