@@ -73,26 +73,35 @@ const CodeSnippetTab = () => {
 
         const validHeaders = headers
             .filter((h: any) => h.key && h.value)
-            .map((h: any) => ({ key: resolveVariable(h.key), value: resolveVariable(h.value) }));
+            .map((h: any) => {
+                const resolvedKey = resolveVariable(h.key);
+                let resolvedValue = resolveVariable(h.value);
+                if (resolvedKey.toLowerCase() === 'authorization') {
+                    const parts = resolvedValue.split(' ');
+                    if (parts.length > 1) {
+                        resolvedValue = `${parts[0]} *******************`;
+                    } else {
+                        resolvedValue = '*******************';
+                    }
+                }
+                return { key: resolvedKey, value: resolvedValue };
+            });
 
         try {
             if (activeTab.authorization) {
                 const authData = JSON.parse(activeTab.authorization);
                 if (authData.type === 'bearer' && authData.token) {
-                    validHeaders.push({ key: 'Authorization', value: `Bearer ${resolveVariable(authData.token)}` });
+                    validHeaders.push({ key: 'Authorization', value: `Bearer *******************` });
                 } else if (authData.type === 'jwt' && authData.token) {
-                    validHeaders.push({ key: 'Authorization', value: `Bearer ${resolveVariable(authData.token)}` });
+                    validHeaders.push({ key: 'Authorization', value: `Bearer *******************` });
                 } else if (authData.type === 'oauth2' && authData.token) {
                     const prefix = resolveVariable(authData.headerPrefix || 'Bearer');
-                    validHeaders.push({ key: 'Authorization', value: `${prefix} ${resolveVariable(authData.token)}` });
+                    validHeaders.push({ key: 'Authorization', value: `${prefix} *******************` });
                 } else if (authData.type === 'basic' && authData.username) {
-                    const uname = resolveVariable(authData.username);
-                    const pwd = resolveVariable(authData.password || '');
-                    const encoded = btoa(`${uname}:${pwd}`);
-                    validHeaders.push({ key: 'Authorization', value: `Basic ${encoded}` });
+                    validHeaders.push({ key: 'Authorization', value: `Basic *******************` });
                 } else if (authData.type === 'apikey' && authData.key && authData.value) {
                     const resolvedKey = resolveVariable(authData.key);
-                    const resolvedVal = resolveVariable(authData.value);
+                    const resolvedVal = '*******************';
                     if (authData.addTo === 'queryParams') {
                         params.push({ key: resolvedKey, value: resolvedVal });
                     } else {

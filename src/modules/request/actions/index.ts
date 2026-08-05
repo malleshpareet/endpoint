@@ -113,6 +113,7 @@ export type Request = {
   method: REST_METHOD;
   url: string;
   body?: string;
+  bodyContentType?: string;
   headers?: string;
   parameters?: string;
   authorization?: string;
@@ -133,6 +134,7 @@ export const addRequestToCollection = async (collectionId: string, value: Reques
       method: value.method,
       url: value.url,
       body: value.body,
+      bodyContentType: value.bodyContentType,
       headers: value.headers,
       parameters: value.parameters,
       authorization: value.authorization,
@@ -161,6 +163,7 @@ export const saveRequest = async (id: string, value: Request) => {
       method: value.method,
       url: value.url,
       body: value.body,
+      bodyContentType: value.bodyContentType,
       headers: value.headers,
       parameters: value.parameters,
       authorization: value.authorization,
@@ -327,13 +330,55 @@ export async function sendRequest(req: {
   headers?: Record<string, string>;
   params?: Record<string, string>;
   body?: any;
+  bodyContentType?: string;
 }) {
+  let axiosData: any = req.body;
+  const axiosHeaders: Record<string, string> = { ...(req.headers || {}) };
+
+  // ── Build the correct body based on content type ──────────────────────────
+  const ct = req.bodyContentType || '';
+
+  if (ct === 'multipart/form-data' && Array.isArray(req.body)) {
+    // Build a real FormData object from the stored key/value/file items
+    const formData = new FormData();
+    for (const item of req.body) {
+      if (!item.key) continue;
+      if (item.type === 'file' && item.value) {
+        // value is a data-URL: "data:<mime>;base64,<data>"
+        try {
+          const [header, base64] = item.value.split(',');
+          const mimeMatch = header.match(/data:([^;]+)/);
+          const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+          const binary = Buffer.from(base64, 'base64');
+          const blob = new Blob([binary], { type: mime });
+          formData.append(item.key, blob, item.fileName || item.key);
+        } catch (e) {
+          console.error('Failed to decode file for key:', item.key, e);
+        }
+      } else {
+        formData.append(item.key, item.value ?? '');
+      }
+    }
+    axiosData = formData;
+    // Let Axios/FormData set the Content-Type with the correct boundary
+    delete axiosHeaders['Content-Type'];
+    delete axiosHeaders['content-type'];
+  } else if (ct === 'application/x-www-form-urlencoded' && Array.isArray(req.body)) {
+    const params = new URLSearchParams();
+    for (const item of req.body) {
+      if (item.key) params.append(item.key, item.value ?? '');
+    }
+    axiosData = params.toString();
+    axiosHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+  }
+  // For application/json / text/plain, Axios handles serialization automatically.
+
   const config: AxiosRequestConfig = {
     method: req.method,
     url: req.url,
-    headers: req.headers,
+    headers: axiosHeaders,
     params: req.params,
-    data: req.body,
+    data: axiosData,
     validateStatus: () => true, // ✅ capture errors too
   };
 
@@ -543,6 +588,7 @@ export async function runDirect(requestData: {
   headers?: Record<string, string>;
   parameters?: Record<string, any>;
   body?: any;
+  bodyContentType?: string;
   authorization?: string;
   environmentId?: string | null;
   workspaceId?: string;
@@ -606,7 +652,8 @@ export async function runDirect(requestData: {
       url: resolveString(requestData.url, finalVariables),
       headers: parseKeyValueArray(resolveObject(requestData.headers, finalVariables)) || {},
       params: parseKeyValueArray(resolveObject(requestData.parameters, finalVariables)),
-      body: resolveObject(requestData.body, finalVariables)
+      body: resolveObject(requestData.body, finalVariables),
+      bodyContentType: requestData.bodyContentType,
     };
 
     applyAuthorization(requestConfig, requestData.authorization, finalVariables, resolveString);

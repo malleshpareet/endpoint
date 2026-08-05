@@ -21,6 +21,7 @@ export type RequestTab = {
   method: string;
   url: string;
   body?: string;
+  bodyContentType?: string; // 👈 tracks multipart/json/text/urlencoded
   headers?: string;
   parameters?: string;
   authorization?: string;
@@ -66,13 +67,15 @@ type PlaygroundState = {
   markUnsaved: (id: string, value: boolean) => void;
   openRequestTab: (req: any) => void; // 👈 new
   updateTabFromSavedRequest: (tabId: string, savedRequest: SavedRequest) => void;
-  responseViewerData:ResponseData | null;
-  setResponseViewerData: (data:ResponseData) => void
+  responses: Record<string, ResponseData>;
+  setResponseViewerData: (tabId: string, data: ResponseData) => void;
 };
 
 export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
-  responseViewerData:null,
-  setResponseViewerData: (data) => set({ responseViewerData: data }),
+  responses: {},
+  setResponseViewerData: (tabId, data) => set((state) => ({ 
+    responses: { ...state.responses, [tabId]: data } 
+  })),
   tabs: [],
   activeTabId: null,
 
@@ -104,7 +107,9 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         state.activeTabId === id && newTabs.length > 0
           ? newTabs[0].id
           : state.activeTabId;
-      return { tabs: newTabs, activeTabId: newActive };
+      const newResponses = { ...state.responses };
+      delete newResponses[id];
+      return { tabs: newTabs, activeTabId: newActive, responses: newResponses };
     }),
 
   setActiveTab: (id) => set({ activeTabId: id }),
@@ -137,6 +142,7 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         method: req.method,
         url: req.url,
         body: req.body,
+        bodyContentType: req.bodyContentType || 'application/json',
         headers: req.headers,
         parameters: req.parameters,
         authorization: typeof req.authorization === 'string' ? req.authorization : (req.authorization ? JSON.stringify(req.authorization) : undefined),
@@ -166,6 +172,7 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
             title: savedRequest.name,
             method: savedRequest.method,
             body: typeof savedRequest?.body === 'string' ? savedRequest.body : (savedRequest?.body ? JSON.stringify(savedRequest.body) : ''),
+            bodyContentType: (savedRequest as any)?.bodyContentType || t.bodyContentType || 'application/json',
             headers: typeof savedRequest?.headers === 'string' ? savedRequest.headers : (savedRequest?.headers ? JSON.stringify(savedRequest.headers) : ''),
             parameters: typeof savedRequest?.parameters === 'string' ? savedRequest.parameters : (savedRequest?.parameters ? JSON.stringify(savedRequest.parameters) : ''),
             authorization: typeof savedRequest?.authorization === 'string' ? savedRequest.authorization : (savedRequest?.authorization ? JSON.stringify(savedRequest.authorization) : ''),
