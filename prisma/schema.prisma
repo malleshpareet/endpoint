@@ -166,6 +166,7 @@ model WorkspaceMember {
 model Collection {
   id   String @id @default(cuid())
   name String
+  description String?
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -189,6 +190,7 @@ enum REST_METHOD {
 model Request {
   id         String      @id @default(cuid())
   name       String
+  description String?
   method     REST_METHOD @default(GET)
   url        String
   parameters Json?

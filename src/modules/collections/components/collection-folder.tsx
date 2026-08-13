@@ -1,4 +1,4 @@
-import { EllipsisVertical, FilePlus, Folder, Trash, Edit, ChevronDown, ChevronRight, Loader, Upload, Download } from 'lucide-react';
+import { EllipsisVertical, FilePlus, Folder, Trash, Edit, ChevronDown, ChevronRight, Loader, Upload, Download, BookOpen } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   DropdownMenu,
@@ -213,6 +213,14 @@ const CollectionFolder = ({ collection }: Props) => {
                       <div className='font-semibold flex justify-center items-center'>
                         <Download className='text-indigo-400 mr-2 w-4 h-4' />
                         Export Collection
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => window.open(`/docs/${collection.id}`, '_blank')}>
+                    <div className='flex flex-row justify-between items-center w-full'>
+                      <div className='font-semibold flex justify-center items-center'>
+                        <BookOpen className='text-yellow-400 mr-2 w-4 h-4' />
+                        View Docs
                       </div>
                     </div>
                   </DropdownMenuItem>
