@@ -7,6 +7,7 @@ import { QueryProvider } from "@/components/query-provider";
 import { HotkeysProviders } from "@/components/hot-key-provider";
 import { ConsoleSanitizerProvider } from "@/components/console-sanitizer-provider";
 import { AIFeatureProvider } from "@/components/ai-feature-provider";
+import { TauriProvider } from "@/components/tauri-provider";
 import db from "@/lib/db";
 
 
@@ -117,14 +118,7 @@ export default async function RootLayout({
         className={`${inter.variable} ${inter.className} antialiased`}
         suppressHydrationWarning
       >
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (window.__TAURI_INTERNALS__ || window.__TAURI__) document.body.classList.add('tauri-glass');
-              document.addEventListener('contextmenu', event => event.preventDefault());
-            `
-          }}
-        />
+        <TauriProvider />
         <ConsoleSanitizerProvider>
           <QueryProvider>
             <ThemeProvider

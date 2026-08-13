@@ -356,3 +356,55 @@ export async function batchSuggestRequestNames(
             : result.reason?.message || 'Unknown error'
     }));
 }
+
+export async function generateCollectionOverview(collectionName: string, requestsContext: any[]) {
+    try {
+        const prompt = `
+You are an expert API technical writer. Write a concise, professional overview (1-2 paragraphs) for an API collection named "${collectionName}".
+
+Here is a summary of the endpoints in this collection:
+${requestsContext.map(r => `- [${r.method}] ${r.url || r.name}`).join('\n')}
+
+The overview should explain what this collection does, its general purpose, and who might use it. Keep it engaging, clear, and professional.
+`;
+
+        const result = await generateText({
+            model,
+            prompt,
+            temperature: 0.7,
+        });
+
+        return { success: true, text: result.text };
+    } catch (error) {
+        console.error('Error generating collection overview:', error);
+        return { success: false, text: '' };
+    }
+}
+
+export async function generateRequestDescription(method: string, url: string, headers: any, body: any, name: string) {
+    try {
+        const prompt = `
+You are an expert API technical writer. Write a concise description (2-3 sentences) for a single API request.
+
+Request Details:
+- Name: ${name}
+- Method: ${method}
+- URL: ${url}
+- Headers: ${JSON.stringify(headers)}
+- Body: ${JSON.stringify(body)}
+
+Describe what this specific request does, what kind of data it expects (if any), and its likely purpose in the broader application.
+`;
+
+        const result = await generateText({
+            model,
+            prompt,
+            temperature: 0.7,
+        });
+
+        return { success: true, text: result.text };
+    } catch (error) {
+        console.error('Error generating request description:', error);
+        return { success: false, text: '' };
+    }
+}
