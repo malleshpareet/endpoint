@@ -27,8 +27,18 @@ const Page = () => {
     );
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "headline": "Httply - Workspace",
+    "description": "Manage your APIs in the Httply Workspace.",
+    "publisher": { "@type": "Organization", "name": "Httply" }
+  };
+
 return (
-  <ResizablePanelGroup direction="horizontal">
+  <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+    <ResizablePanelGroup direction="horizontal">
     <ResizablePanel defaultSize={65} minSize={40}>
         <RequestPlayground />
     </ResizablePanel>
@@ -41,6 +51,7 @@ return (
       </div>
     </ResizablePanel>
   </ResizablePanelGroup>
+  </>
 )
 };
 

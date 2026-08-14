@@ -8,8 +8,18 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-    return (
-        <main
+    const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "headline": "Httply - Privacy Policy",
+    "description": "Learn how Httply collects, uses, and protects your personal data. Your privacy is important to us.",
+    "publisher": { "@type": "Organization", "name": "Httply" }
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <main
             className="min-h-screen w-full"
             style={{
                 background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(251,146,60,0.07) 0%, transparent 70%), #080808",
@@ -186,5 +196,6 @@ export default function PrivacyPage() {
                 </div>
             </div>
         </main>
+    </>
     );
 }

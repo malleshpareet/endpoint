@@ -25,9 +25,32 @@ export default async function DocsPage({ params }: { params: Promise<{ collectio
     notFound();
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": `${collection.name} - API Documentation`,
+    "description": collection.description || `API Documentation for ${collection.name}. Explore endpoints, parameters, and examples.`,
+    "articleSection": "API Documentation",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Httply"
+    },
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Httply",
+      "applicationCategory": "DeveloperApplication"
+    }
+  };
+
   return (
-    <div className="flex h-screen w-full bg-zinc-950 text-zinc-200 overflow-hidden font-sans">
-      <DocsContent collection={collection} />
-    </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="flex h-screen w-full bg-zinc-950 text-zinc-200 overflow-hidden font-sans">
+        <DocsContent collection={collection} />
+      </div>
+    </>
   );
 }

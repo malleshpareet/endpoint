@@ -5,8 +5,18 @@ import RealtimeMessageEditor from '@/modules/realtime/components/realtime-messag
 import React from 'react'
 
 const RealtimePage = () => {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "headline": "Httply - WebSocket Client",
+    "description": "Connect to a server and start testing realtime messages.",
+    "publisher": { "@type": "Organization", "name": "Httply" }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-background">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <div className="flex flex-col h-full bg-background">
       {/* Page Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-border/50">
         <div className="flex items-center justify-center w-8 h-8 rounded-md bg-violet-500/10 border border-violet-500/20">
@@ -33,6 +43,7 @@ const RealtimePage = () => {
         <RealtimeMessageEditor />
       </div>
     </div>
+    </>
   )
 }
 

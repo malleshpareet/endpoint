@@ -8,8 +8,18 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-    return (
-        <main
+    const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "headline": "Httply - Terms of Service",
+    "description": "Read the Httply Terms of Service. Understand your rights and responsibilities when using our API client platform.",
+    "publisher": { "@type": "Organization", "name": "Httply" }
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <main
             className="min-h-screen w-full"
             style={{
                 background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(251,146,60,0.07) 0%, transparent 70%), #080808",
@@ -164,5 +174,6 @@ export default function TermsPage() {
                 </div>
             </div>
         </main>
+    </>
     );
 }
