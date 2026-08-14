@@ -20,7 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://httply.qzz.io'),
   title: "Httply — API Client",
   description: "A professional API client for developers. Test, debug, and automate REST APIs easily.",
-  keywords: ["API client", "REST API", "developer tools", "Httply", "API testing", "Postman alternative"],
+  keywords: ["API client", "REST API", "developer tools", "Httply", "API testing", "Postman alternative", "Insomnia alternative", "HTTP client", "AI optimized", "API documentation"],
+  category: "Developer Tools",
+  authors: [{ name: "Httply Team" }],
+  creator: "Httply Team",
+  publisher: "Httply Team",
   openGraph: {
     title: "Httply — API Client",
     description: "A professional API client for developers. Test, debug, and automate REST APIs easily.",
@@ -102,13 +106,45 @@ export default async function RootLayout({
                 applicationCategory: "DeveloperApplication",
                 operatingSystem: "Any",
                 url: "https://httply.qzz.io",
-                description: "A professional API client for developers. Test, debug, and automate REST APIs easily."
+                description: "A professional API client for developers. Test, debug, and automate REST APIs easily. A lightweight alternative to Postman.",
+                offers: {
+                  "@type": "Offer",
+                  price: "0",
+                  priceCurrency: "USD"
+                }
               },
               {
                 "@context": "https://schema.org",
                 "@type": "WebSite",
                 name: "Httply",
-                url: "https://httply.qzz.io/"
+                url: "https://httply.qzz.io/",
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: "https://httply.qzz.io/search?q={search_term_string}",
+                  "query-input": "required name=search_term_string"
+                }
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: [
+                  {
+                    "@type": "Question",
+                    name: "What is Httply?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Httply is a professional API client for developers to test, debug, and automate REST APIs easily."
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Is Httply an alternative to Postman?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes, Httply serves as a modern, lightweight, and fast alternative to Postman and Insomnia for API testing."
+                    }
+                  }
+                ]
               }
             ])
           }}

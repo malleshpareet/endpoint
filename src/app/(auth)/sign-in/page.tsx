@@ -31,9 +31,19 @@ const LoginPage = () => {
         setMounted(true);
     }, []);
 
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "headline": "Httply - Sign In",
+        "description": "Sign in to Httply.",
+        "publisher": { "@type": "Organization", "name": "Httply" }
+    };
+
     return (
-        <main className="relative flex w-full min-h-screen items-center justify-center px-4" style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
-            <LoginBackground />
+        <>
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+            <main className="relative flex w-full min-h-screen items-center justify-center px-4" style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
+                <LoginBackground />
             
             <Suspense fallback={null}>
                 <ErrorToaster />
@@ -168,7 +178,8 @@ const LoginPage = () => {
                     </div>
                 </div>
             </div>
-        </main>
+            </main>
+        </>
     )
 }
 
