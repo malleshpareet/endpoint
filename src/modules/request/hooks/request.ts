@@ -165,7 +165,7 @@ export function useRunBrowserRequest() {
         resultData = {
           status: res.status,
           statusText: res.statusText,
-          headers: Object.fromEntries(Object.entries(res.headers || {})),
+          headers: (res.headers as any)?.toJSON ? (res.headers as any).toJSON() : res.headers,
           data: res.data,
           duration: Math.round(duration),
           size,
