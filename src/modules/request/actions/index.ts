@@ -750,3 +750,169 @@ export async function runDirect(requestData: {
     };
   }
 }
+
+export async function prepareBrowserRequest(requestData: any) {
+  try {
+    let globalVars: any[] = [];
+    let envVars: any[] = [];
+    let collectionVars: any[] = [];
+
+    if (requestData.workspaceId) {
+      const workspace = await db.workspace.findUnique({ where: { id: requestData.workspaceId } });
+      if (workspace && Array.isArray((workspace as any).globalVariables)) {
+        globalVars = (workspace as any).globalVariables;
+      }
+    }
+
+    if (requestData.environmentId) {
+      const env = await db.environment.findUnique({ where: { id: requestData.environmentId } });
+      if (env && Array.isArray(env.values)) {
+        envVars = env.values;
+      }
+    }
+
+    if (requestData.collectionId) {
+      const collection = await db.collection.findUnique({ where: { id: requestData.collectionId } });
+      if (collection && Array.isArray((collection as any).variables)) {
+        collectionVars = (collection as any).variables;
+      }
+    }
+
+    const mergedVarsMap = new Map<string, any>();
+    globalVars.forEach(v => mergedVarsMap.set(v.key, v));
+    envVars.forEach(v => mergedVarsMap.set(v.key, v));
+    collectionVars.forEach(v => mergedVarsMap.set(v.key, v));
+    (requestData.localVariables || []).forEach((v: any) => mergedVarsMap.set(v.key, v));
+
+    const envVarsRecord: Record<string, string> = {};
+    envVars.forEach(v => envVarsRecord[v.key] = String(v.currentValue !== undefined ? v.currentValue : v.value));
+
+    const localVarsRecord: Record<string, string> = {};
+    Array.from(mergedVarsMap.values()).forEach(v => localVarsRecord[v.key] = String(v.currentValue !== undefined ? v.currentValue : v.value));
+
+    const existingReq = await db.request.findUnique({ where: { id: requestData.id } });
+    const preRequestScript = existingReq?.preRequestScript || null;
+    const testScript = existingReq?.testScript || null;
+
+    const preRequestResult = executeScriptSafely(preRequestScript, {
+      environmentVariables: envVarsRecord,
+      localVariables: localVarsRecord,
+    });
+    
+    updateVariablesMap(mergedVarsMap, preRequestResult.environmentMutations);
+    updateVariablesMap(mergedVarsMap, preRequestResult.localMutations);
+
+    const finalVariables = Array.from(mergedVarsMap.values());
+
+    const requestConfig = {
+      method: requestData.method,
+      url: resolveString(requestData.url, finalVariables),
+      headers: parseKeyValueArray(resolveObject(requestData.headers, finalVariables)) || {},
+      params: parseKeyValueArray(resolveObject(requestData.parameters, finalVariables)),
+      body: resolveObject(requestData.body, finalVariables),
+      bodyContentType: requestData.bodyContentType,
+    };
+
+    applyAuthorization(requestConfig, requestData.authorization, finalVariables, resolveString);
+
+    return {
+      success: true,
+      requestConfig,
+      context: { envVarsRecord, localVarsRecord, preRequestResult, testScript }
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function saveBrowserResponse(requestData: any, context: any, result: any) {
+  try {
+    const existingReq = await db.request.findUnique({ where: { id: requestData.id } });
+    const testScriptResult = executeScriptSafely(context.testScript, {
+      environmentVariables: { ...context.envVarsRecord, ...context.preRequestResult.environmentMutations },
+      localVariables: { ...context.localVarsRecord, ...context.preRequestResult.localMutations },
+      response: result.data
+    });
+
+    const finalEnvMutations = { ...context.preRequestResult.environmentMutations, ...testScriptResult.environmentMutations };
+
+    if (Object.keys(finalEnvMutations).length > 0 && requestData.environmentId) {
+      const dbEnv = await db.environment.findUnique({ where: { id: requestData.environmentId } });
+      if (dbEnv) {
+        let currentValues: any[] = [];
+        if (Array.isArray(dbEnv.values)) {
+          currentValues = [...dbEnv.values];
+        }
+        
+        for (const [key, val] of Object.entries(finalEnvMutations)) {
+          const idx = currentValues.findIndex((v: any) => v.key === key);
+          if (idx >= 0) {
+            currentValues[idx].currentValue = val;
+            currentValues[idx].value = val;
+          } else {
+            currentValues.push({ key, value: val, currentValue: val, enabled: true });
+          }
+        }
+
+        await db.environment.update({
+          where: { id: requestData.environmentId },
+          data: { values: currentValues }
+        });
+      }
+    }
+
+    let requestRun = null;
+    if (existingReq) {
+      requestRun = await db.requestRun.create({
+        data: {
+          requestId: requestData.id,
+          status: result.status || 0,
+          statusText: result.statusText || (result.error ? 'Error' : null),
+          headers: result.headers || "",
+          body: result.data ? (typeof result.data === 'string' ? result.data : JSON.stringify(result.data)) : null,
+          durationMs: result.duration || 0,
+          resolvedUrl: result.resolvedUrl || requestData.url,
+        }
+      });
+
+      if (result.data && !result.error) {
+        await db.request.update({
+          where: { id: requestData.id },
+          data: {
+            response: result.data,
+            updatedAt: new Date()
+          }
+        });
+      }
+    }
+
+    return {
+      success: true,
+      requestRun,
+      result
+    };
+  } catch (error: any) {
+    let failedRun = null;
+    try {
+      const existingReqFallback = await db.request.findUnique({ where: { id: requestData.id } });
+      if (existingReqFallback) {
+        failedRun = await db.requestRun.create({
+          data: {
+            requestId: requestData.id,
+            status: 0,
+            statusText: 'Failed',
+            headers: "",
+            body: error.message,
+            durationMs: 0
+          }
+        });
+      }
+    } catch(e) {}
+
+    return {
+      success: false,
+      error: error.message,
+      requestRun: failedRun
+    };
+  }
+}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { RequestTab } from '../store/useRequestStore'
+import { RequestTab, useRequestPlaygroundStore } from '../store/useRequestStore'
 
 import {
   Select,
@@ -12,11 +12,11 @@ import {
 import { VariableInput } from './variable-input'
 import { Button } from "@/components/ui/button"
 import { Send, Loader2 } from 'lucide-react'
-import { useRunDirectRequest } from '../hooks/request'
+import { useRunDirectRequest, useRunBrowserRequest } from '../hooks/request'
 import { toast } from 'sonner'
 import { useWorkspaceStore } from '@/modules/layout/stores'
 
-import { Box } from 'lucide-react'
+import { Box, Globe, Server } from 'lucide-react'
 import { useEnvironments } from '@/modules/environments/hooks/environments'
 import { parseCurl } from '../utils/curl-parser'
 
@@ -28,7 +28,10 @@ interface Props {
 const RequestBar = ({ tab, updateTab }: Props) => {
   const { selectedWorkspace, activeEnvironmentId, setActiveEnvironmentId } = useWorkspaceStore();
   const { data: environments } = useEnvironments(selectedWorkspace?.id);
-  const { mutateAsync, isPending, isError } = useRunDirectRequest();
+  const { mutateAsync: mutateDirectAsync, isPending: isDirectPending } = useRunDirectRequest();
+  const { mutateAsync: mutateBrowserAsync, isPending: isBrowserPending } = useRunBrowserRequest();
+  const { browserMode, toggleBrowserMode } = useRequestPlaygroundStore();
+  const isPending = isDirectPending || isBrowserPending;
 
   const onSendRequest = async () => {
     try {
@@ -38,7 +41,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         try { return JSON.parse(val); } catch (e) { return val; }
       };
 
-      await mutateAsync({
+      const reqPayload = {
         id: tab.requestId || tab.id,
         method: tab.method,
         url: tab.url,
@@ -50,7 +53,13 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         environmentId: activeEnvironmentId,
         workspaceId: selectedWorkspace?.id,
         collectionId: tab.collectionId
-      });
+      };
+
+      if (browserMode) {
+        await mutateBrowserAsync(reqPayload);
+      } else {
+        await mutateDirectAsync(reqPayload);
+      }
 
       toast.success('Request sent successfully!');
     } catch (error) {
@@ -144,6 +153,14 @@ const RequestBar = ({ tab, updateTab }: Props) => {
           ))}
         </SelectContent>
       </Select>
+
+      <div
+        onClick={toggleBrowserMode}
+        className={`flex items-center justify-center w-9 h-9 rounded-md cursor-pointer transition-colors ${browserMode ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30' : 'bg-[#1a1a1e] border border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:border-white/[0.15]'}`}
+        title={browserMode ? "Browser Mode: ON (Requests sent from your browser to fix localhost routing)" : "Browser Mode: OFF (Requests sent from cloud server)"}
+      >
+        {browserMode ? <Globe className="w-4 h-4" /> : <Server className="w-4 h-4" />}
+      </div>
 
       <Button
         type='submit'

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import {
   addRequestToCollection,
   getAllRequestFromCollection,
@@ -8,6 +9,8 @@ import {
   saveRequest,
   deleteRequest,
   renameRequest,
+  prepareBrowserRequest,
+  saveBrowserResponse
 } from "../actions";
 import { useRequestPlaygroundStore } from "../store/useRequestStore";
 
@@ -69,6 +72,63 @@ export function useRunDirectRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (requestData: any) => await runDirect(requestData),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+      queryClient.invalidateQueries({ queryKey: ["history"] });
+      queryClient.invalidateQueries({ queryKey: ["environments"] });
+      if (activeTabId) {
+        setResponseViewerData(activeTabId, data as any);
+      }
+    },
+  });
+}
+
+export function useRunBrowserRequest() {
+  const { setResponseViewerData, activeTabId } = useRequestPlaygroundStore();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (requestData: any) => {
+      const prep = await prepareBrowserRequest(requestData);
+      if (!prep.success) {
+        return { success: false, error: prep.error };
+      }
+      
+      const { requestConfig, context } = prep;
+      let resultData: any = null;
+      const start = performance.now();
+      
+      try {
+        const res = await axios({
+           ...requestConfig,
+           validateStatus: () => true
+        });
+        const end = performance.now();
+        const duration = end - start;
+        const size = res.headers && res.headers["content-length"] ? parseInt(String(res.headers["content-length"])) : new TextEncoder().encode(JSON.stringify(res.data)).length;
+        
+        resultData = {
+          status: res.status,
+          statusText: res.statusText,
+          headers: Object.fromEntries(Object.entries(res.headers || {})),
+          data: res.data,
+          duration: Math.round(duration),
+          size,
+          resolvedUrl: requestConfig?.url
+        };
+      } catch (err: any) {
+        const end = performance.now();
+        resultData = {
+          error: err.message,
+          data: `Request Error: ${err.message}`,
+          duration: Math.round(end - start),
+          resolvedUrl: requestConfig?.url
+        };
+      }
+      
+      const finalRes = await saveBrowserResponse(requestData, context, resultData);
+      return finalRes;
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
       queryClient.invalidateQueries({ queryKey: ["history"] });

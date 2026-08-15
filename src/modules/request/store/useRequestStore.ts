@@ -65,6 +65,8 @@ type PlaygroundState = {
   setActiveTab: (id: string) => void;
   updateTab: (id: string, data: Partial<RequestTab>) => void;
   markUnsaved: (id: string, value: boolean) => void;
+  browserMode: boolean;
+  toggleBrowserMode: () => void;
   openRequestTab: (req: any) => void; // 👈 new
   updateTabFromSavedRequest: (tabId: string, savedRequest: SavedRequest) => void;
   responses: Record<string, ResponseData>;
@@ -76,6 +78,8 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
   setResponseViewerData: (tabId, data) => set((state) => ({ 
     responses: { ...state.responses, [tabId]: data } 
   })),
+  browserMode: false,
+  toggleBrowserMode: () => set((state) => ({ browserMode: !state.browserMode })),
   tabs: [],
   activeTabId: null,
 
