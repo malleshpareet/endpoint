@@ -141,3 +141,18 @@ export const importToExistingCollectionAction = async (collectionId: string, par
     return { success: false, error: error.message };
   }
 };
+
+export const getCollectionForDocs = async (collectionId: string) => {
+  const collection = await db.collection.findUnique({
+    where: { id: collectionId },
+    include: {
+      requests: true,
+    },
+  });
+
+  if (collection && collection.requests) {
+    collection.requests.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  return collection;
+};
