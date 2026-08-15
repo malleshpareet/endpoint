@@ -155,9 +155,14 @@ const RequestBar = ({ tab, updateTab }: Props) => {
       </Select>
 
       <div
-        onClick={toggleBrowserMode}
+        onClick={() => {
+          if (!browserMode) {
+            toast.info("Local Mode ON: Please make sure to allow CORS in your backend to test local APIs.", { duration: 5000 });
+          }
+          toggleBrowserMode();
+        }}
         className={`flex items-center justify-center w-9 h-9 rounded-md cursor-pointer transition-colors ${browserMode ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30' : 'bg-[#1a1a1e] border border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:border-white/[0.15]'}`}
-        title={browserMode ? "Browser Mode: ON (Requests sent from your browser to fix localhost routing)" : "Browser Mode: OFF (Requests sent from cloud server)"}
+        title={browserMode ? "Local Mode: ON (Requires CORS in your backend to test local APIs)" : "Cloud Mode: ON (Bypasses CORS but cannot reach localhost)"}
       >
         {browserMode ? <Globe className="w-4 h-4" /> : <Server className="w-4 h-4" />}
       </div>
