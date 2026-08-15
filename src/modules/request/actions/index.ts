@@ -370,8 +370,16 @@ export async function sendRequest(req: {
     }
     axiosData = params.toString();
     axiosHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+  } else if (ct === 'application/json') {
+    if (!axiosHeaders['Content-Type'] && !axiosHeaders['content-type']) {
+      axiosHeaders['Content-Type'] = 'application/json';
+    }
+    if (typeof axiosData === 'string') {
+      try {
+        axiosData = JSON.parse(axiosData);
+      } catch (e) {}
+    }
   }
-  // For application/json / text/plain, Axios handles serialization automatically.
 
   const config: AxiosRequestConfig = {
     method: req.method,

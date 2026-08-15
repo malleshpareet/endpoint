@@ -95,12 +95,67 @@ export function useRunBrowserRequest() {
       }
       
       const { requestConfig, context } = prep;
+      if (!requestConfig) {
+        return { success: false, error: 'Request configuration is missing' };
+      }
       let resultData: any = null;
       const start = performance.now();
       
+      let axiosData: any = requestConfig.body;
+      const axiosHeaders: Record<string, string> = { ...(requestConfig.headers || {}) };
+      const ct = requestConfig.bodyContentType || '';
+
+      if (ct === 'multipart/form-data' && Array.isArray(requestConfig.body)) {
+        const formData = new FormData();
+        for (const item of requestConfig.body) {
+          if (!item.key) continue;
+          if (item.type === 'file' && item.value) {
+            try {
+              const [header, base64] = item.value.split(',');
+              const mimeMatch = header.match(/data:([^;]+)/);
+              const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+              const binaryStr = atob(base64);
+              const binary = new Uint8Array(binaryStr.length);
+              for (let i = 0; i < binaryStr.length; i++) {
+                binary[i] = binaryStr.charCodeAt(i);
+              }
+              const blob = new Blob([binary], { type: mime });
+              formData.append(item.key, blob, item.fileName || item.key);
+            } catch (e) {
+              console.error('Failed to decode file for key:', item.key, e);
+            }
+          } else {
+            formData.append(item.key, item.value ?? '');
+          }
+        }
+        axiosData = formData;
+        delete axiosHeaders['Content-Type'];
+        delete axiosHeaders['content-type'];
+      } else if (ct === 'application/x-www-form-urlencoded' && Array.isArray(requestConfig.body)) {
+        const params = new URLSearchParams();
+        for (const item of requestConfig.body) {
+          if (item.key) params.append(item.key, item.value ?? '');
+        }
+        axiosData = params.toString();
+        axiosHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+      } else if (ct === 'application/json') {
+        if (!axiosHeaders['Content-Type'] && !axiosHeaders['content-type']) {
+          axiosHeaders['Content-Type'] = 'application/json';
+        }
+        if (typeof axiosData === 'string') {
+          try {
+            axiosData = JSON.parse(axiosData);
+          } catch(e) {}
+        }
+      }
+
       try {
         const res = await axios({
-           ...requestConfig,
+           method: requestConfig.method,
+           url: requestConfig.url,
+           headers: axiosHeaders,
+           params: requestConfig.params,
+           data: axiosData,
            validateStatus: () => true
         });
         const end = performance.now();
