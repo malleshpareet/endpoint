@@ -147,23 +147,76 @@ export function useRunBrowserRequest() {
       }
 
       try {
-        const res = await axios({
-          method: requestConfig.method,
-          url: requestConfig.url,
-          headers: axiosHeaders,
-          params: requestConfig.params,
-          data: axiosData,
-          validateStatus: () => true
-        });
+        let isTauri = false;
+        try {
+          isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+        } catch(e) {}
+        
+        let finalStatus = 0;
+        let finalStatusText = '';
+        let finalHeaders: Record<string, string> = {};
+        let finalData: any = null;
+
+        if (isTauri) {
+            const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+            
+            let finalUrl = requestConfig.url;
+            if (requestConfig.params && Object.keys(requestConfig.params).length > 0) {
+               try {
+                   const urlObj = new URL(finalUrl);
+                   Object.entries(requestConfig.params).forEach(([k, v]) => urlObj.searchParams.append(k, String(v)));
+                   finalUrl = urlObj.toString();
+               } catch(e) {}
+            }
+
+            const isFormData = axiosData instanceof FormData;
+            const isURLSearchParams = axiosData instanceof URLSearchParams;
+            const isString = typeof axiosData === 'string';
+            
+            let body = ['GET', 'HEAD'].includes(requestConfig.method?.toUpperCase() || 'GET') ? undefined : axiosData;
+            if (body && !isFormData && !isURLSearchParams && !isString) {
+               body = JSON.stringify(body);
+            }
+
+            const tRes = await tauriFetch(finalUrl, {
+              method: requestConfig.method,
+              headers: axiosHeaders,
+              body
+            });
+            
+            finalStatus = tRes.status;
+            finalStatusText = tRes.statusText;
+            tRes.headers.forEach((val, key) => { finalHeaders[key] = val; });
+            
+            try {
+              finalData = await tRes.json();
+            } catch(e) {
+              finalData = await tRes.text();
+            }
+        } else {
+          const res = await axios({
+            method: requestConfig.method,
+            url: requestConfig.url,
+            headers: axiosHeaders,
+            params: requestConfig.params,
+            data: axiosData,
+            validateStatus: () => true
+          });
+          finalStatus = res.status;
+          finalStatusText = res.statusText;
+          finalHeaders = Object.fromEntries(Object.entries(res.headers || {}));
+          finalData = res.data;
+        }
+
         const end = performance.now();
         const duration = end - start;
-        const size = res.headers && res.headers["content-length"] ? parseInt(String(res.headers["content-length"])) : new TextEncoder().encode(JSON.stringify(res.data)).length;
+        const size = finalHeaders["content-length"] ? parseInt(String(finalHeaders["content-length"])) : new TextEncoder().encode(JSON.stringify(finalData)).length;
 
         resultData = {
-          status: res.status,
-          statusText: res.statusText,
-          headers: Object.fromEntries(Object.entries(res.headers || {})),
-          data: res.data,
+          status: finalStatus,
+          statusText: finalStatusText,
+          headers: finalHeaders,
+          data: finalData,
           duration: Math.round(duration),
           size,
           resolvedUrl: requestConfig?.url
