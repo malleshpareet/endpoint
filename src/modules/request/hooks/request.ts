@@ -147,109 +147,23 @@ export function useRunBrowserRequest() {
       }
 
       try {
-        let isTauri = false;
-        try {
-          isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
-        } catch(e) {}
-        
-        let finalStatus = 0;
-        let finalStatusText = '';
-        let finalHeaders: Record<string, string> = {};
-        let finalData: any = null;
-
-        if (isTauri) {
-            const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-            
-            let finalUrl = requestConfig.url;
-            if (requestConfig.params && Object.keys(requestConfig.params).length > 0) {
-               try {
-                   const urlObj = new URL(finalUrl);
-                   Object.entries(requestConfig.params).forEach(([k, v]) => urlObj.searchParams.append(k, String(v)));
-                   finalUrl = urlObj.toString();
-               } catch(e) {}
-            }
-
-            const isFormData = axiosData instanceof FormData;
-            const isURLSearchParams = axiosData instanceof URLSearchParams;
-            const isString = typeof axiosData === 'string';
-            
-            let body = ['GET', 'HEAD'].includes(requestConfig.method?.toUpperCase() || 'GET') ? undefined : axiosData;
-            if (body && !isFormData && !isURLSearchParams && !isString) {
-               body = JSON.stringify(body);
-            }
-
-            let tRes;
-            try {
-              tRes = await tauriFetch(finalUrl, {
-                method: requestConfig.method,
-                headers: axiosHeaders,
-                body
-              });
-            } catch (err: any) {
-              let isLocalhost = false;
-              try {
-                isLocalhost = new URL(finalUrl).hostname === 'localhost';
-              } catch(e) {}
-              
-              if (isLocalhost) {
-                const urlObj = new URL(finalUrl);
-                try {
-                  urlObj.hostname = '127.0.0.1';
-                  tRes = await tauriFetch(urlObj.toString(), {
-                    method: requestConfig.method,
-                    headers: axiosHeaders,
-                    body
-                  });
-                } catch (err2: any) {
-                  try {
-                    urlObj.hostname = '[::1]';
-                    tRes = await tauriFetch(urlObj.toString(), {
-                      method: requestConfig.method,
-                      headers: axiosHeaders,
-                      body
-                    });
-                  } catch (err3) {
-                    throw err; 
-                  }
-                }
-              } else {
-                throw err;
-              }
-            }
-            
-            finalStatus = tRes.status;
-            finalStatusText = tRes.statusText;
-            tRes.headers.forEach((val, key) => { finalHeaders[key] = val; });
-            
-            try {
-              finalData = await tRes.json();
-            } catch(e) {
-              finalData = await tRes.text();
-            }
-        } else {
-          const res = await axios({
-            method: requestConfig.method,
-            url: requestConfig.url,
-            headers: axiosHeaders,
-            params: requestConfig.params,
-            data: axiosData,
-            validateStatus: () => true
-          });
-          finalStatus = res.status;
-          finalStatusText = res.statusText;
-          finalHeaders = Object.fromEntries(Object.entries(res.headers || {}));
-          finalData = res.data;
-        }
-
+        const res = await axios({
+          method: requestConfig.method,
+          url: requestConfig.url,
+          headers: axiosHeaders,
+          params: requestConfig.params,
+          data: axiosData,
+          validateStatus: () => true
+        });
         const end = performance.now();
         const duration = end - start;
-        const size = finalHeaders["content-length"] ? parseInt(String(finalHeaders["content-length"])) : new TextEncoder().encode(JSON.stringify(finalData)).length;
+        const size = res.headers && res.headers["content-length"] ? parseInt(String(res.headers["content-length"])) : new TextEncoder().encode(JSON.stringify(res.data)).length;
 
         resultData = {
-          status: finalStatus,
-          statusText: finalStatusText,
-          headers: finalHeaders,
-          data: finalData,
+          status: res.status,
+          statusText: res.statusText,
+          headers: Object.fromEntries(Object.entries(res.headers || {})),
+          data: res.data,
           duration: Math.round(duration),
           size,
           resolvedUrl: requestConfig?.url
