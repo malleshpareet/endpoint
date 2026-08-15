@@ -40,6 +40,7 @@ interface Result {
   statusText?: string;
   duration?: number;
   size?: number;
+  data?: any;
 }
 
 export interface ResponseData {
@@ -79,7 +80,7 @@ const ResponseViewer = ({ responseData }: Props) => {
   };
 
   const handleSave = () => {
-    const rawBody = responseData?.requestRun?.body;
+    const rawBody = responseData?.requestRun?.body ?? responseData?.result?.data;
     if (!rawBody) return;
 
     let contentType = 'text/plain';
@@ -112,7 +113,7 @@ const ResponseViewer = ({ responseData }: Props) => {
   let responseBody: unknown = {};
   let formattedJsonString = '';
   try {
-    const rawBody = responseData?.requestRun?.body;
+    const rawBody = responseData?.requestRun?.body ?? responseData?.result?.data;
     if (typeof rawBody === 'string') {
       const parsed = rawBody.length ? JSON.parse(rawBody) : rawBody;
       responseBody = sanitizeObject(parsed);
@@ -122,7 +123,7 @@ const ResponseViewer = ({ responseData }: Props) => {
     formattedJsonString = JSON.stringify(responseBody, null, 2);
   } catch (e) {
     // If parsing fails, fall back to the raw string
-    const rawBody = responseData?.requestRun?.body;
+    const rawBody = responseData?.requestRun?.body ?? responseData?.result?.data;
     responseBody = typeof rawBody === 'string' ? sanitizeString(rawBody) : sanitizeObject(rawBody ?? {});
     formattedJsonString = typeof responseBody === 'string'
       ? responseBody
@@ -134,7 +135,7 @@ const ResponseViewer = ({ responseData }: Props) => {
   const duration: number | undefined = responseData.result?.duration ?? responseData.requestRun?.durationMs;
   const size: number | undefined = responseData.result?.size;
 
-  const rawBody = responseData.requestRun?.body;
+  const rawBody = responseData.requestRun?.body ?? responseData.result?.data;
   const sanitizedRawBody = typeof rawBody === 'string' ? sanitizeString(rawBody) : JSON.stringify(sanitizeObject(rawBody ?? {}));
 
   return (
