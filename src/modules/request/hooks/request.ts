@@ -178,11 +178,44 @@ export function useRunBrowserRequest() {
                body = JSON.stringify(body);
             }
 
-            const tRes = await tauriFetch(finalUrl, {
-              method: requestConfig.method,
-              headers: axiosHeaders,
-              body
-            });
+            let tRes;
+            try {
+              tRes = await tauriFetch(finalUrl, {
+                method: requestConfig.method,
+                headers: axiosHeaders,
+                body
+              });
+            } catch (err: any) {
+              let isLocalhost = false;
+              try {
+                isLocalhost = new URL(finalUrl).hostname === 'localhost';
+              } catch(e) {}
+              
+              if (isLocalhost) {
+                const urlObj = new URL(finalUrl);
+                try {
+                  urlObj.hostname = '127.0.0.1';
+                  tRes = await tauriFetch(urlObj.toString(), {
+                    method: requestConfig.method,
+                    headers: axiosHeaders,
+                    body
+                  });
+                } catch (err2: any) {
+                  try {
+                    urlObj.hostname = '[::1]';
+                    tRes = await tauriFetch(urlObj.toString(), {
+                      method: requestConfig.method,
+                      headers: axiosHeaders,
+                      body
+                    });
+                  } catch (err3) {
+                    throw err; 
+                  }
+                }
+              } else {
+                throw err;
+              }
+            }
             
             finalStatus = tRes.status;
             finalStatusText = tRes.statusText;
