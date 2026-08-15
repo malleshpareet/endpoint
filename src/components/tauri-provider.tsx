@@ -9,11 +9,11 @@ export function TauriProvider() {
         document.body.classList.add("tauri-glass");
       }
       
-      const disableContextMenu = (e: MouseEvent) => e.preventDefault();
-      document.addEventListener("contextmenu", disableContextMenu);
+      // const disableContextMenu = (e: MouseEvent) => e.preventDefault();
+      // document.addEventListener("contextmenu", disableContextMenu);
       
       return () => {
-        document.removeEventListener("contextmenu", disableContextMenu);
+        // document.removeEventListener("contextmenu", disableContextMenu);
       };
     }
   }, []);
