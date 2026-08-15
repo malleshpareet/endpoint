@@ -402,11 +402,23 @@ export async function sendRequest(req: {
 
     console.log(res.data);
 
+    let plainHeaders = {};
+    try {
+      plainHeaders = JSON.parse(JSON.stringify(res.headers));
+    } catch(e) {}
+
+    let plainData = res.data;
+    if (plainData !== undefined) {
+      try {
+        plainData = JSON.parse(JSON.stringify(plainData));
+      } catch(e) {}
+    }
+
     return {
       status: res.status,
       statusText: res.statusText,
-      headers: (res.headers as any)?.toJSON ? (res.headers as any).toJSON() : res.headers,
-      data: res.data,
+      headers: plainHeaders,
+      data: plainData,
       duration: Math.round(duration),
       size,
     };
