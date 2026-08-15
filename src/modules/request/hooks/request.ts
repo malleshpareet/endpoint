@@ -170,9 +170,23 @@ export function useRunBrowserRequest() {
         };
       } catch (err: any) {
         const end = performance.now();
+        let errorMessage = err.message;
+        let dataMessage = `Request Error: ${err.message}`;
+
+        if (err.message === 'Network Error' && requestConfig?.url) {
+          try {
+            const urlObj = new URL(requestConfig.url);
+            if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+              const corsWarning = "\n\nTip: If you are testing a local API, make sure CORS is enabled on your server.\nExample (Express/Node.js):\n// Middleware\napp.use(cors());";
+              errorMessage += corsWarning;
+              dataMessage += corsWarning;
+            }
+          } catch (e) { }
+        }
+
         resultData = {
-          error: err.message,
-          data: `Request Error: ${err.message}`,
+          error: errorMessage,
+          data: dataMessage,
           duration: Math.round(end - start),
           resolvedUrl: requestConfig?.url
         };
