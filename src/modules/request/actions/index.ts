@@ -62,11 +62,11 @@ function applyAuthorization(requestConfig: any, authorizationStr: string | null 
         key: resolveStr(authData.authKey || '', finalVariables),
         algorithm: resolveStr(authData.algorithm || 'sha256', finalVariables)
       };
-      
+
       const hawkOpts: any = { credentials };
       if (requestConfig.body) {
-         hawkOpts.payload = typeof requestConfig.body === 'string' ? requestConfig.body : JSON.stringify(requestConfig.body);
-         hawkOpts.contentType = requestConfig.headers['Content-Type'] || requestConfig.headers['content-type'] || 'text/plain';
+        hawkOpts.payload = typeof requestConfig.body === 'string' ? requestConfig.body : JSON.stringify(requestConfig.body);
+        hawkOpts.contentType = requestConfig.headers['Content-Type'] || requestConfig.headers['content-type'] || 'text/plain';
       }
       if (authData.ext) hawkOpts.ext = resolveStr(authData.ext, finalVariables);
       if (authData.app) hawkOpts.app = resolveStr(authData.app, finalVariables);
@@ -83,7 +83,7 @@ function applyAuthorization(requestConfig: any, authorizationStr: string | null 
         signature_method: resolveStr(authData.signatureMethod || 'HMAC-SHA1', finalVariables),
         hash_function(base_string: string, key: string) {
           if (authData.signatureMethod === 'HMAC-SHA256') {
-             return crypto.createHmac('sha256', key).update(base_string).digest('base64');
+            return crypto.createHmac('sha256', key).update(base_string).digest('base64');
           }
           return crypto.createHmac('sha1', key).update(base_string).digest('base64');
         },
@@ -94,7 +94,7 @@ function applyAuthorization(requestConfig: any, authorizationStr: string | null 
         method: requestConfig.method,
         data: requestConfig.params || {}
       };
-      
+
       const token = {
         key: resolveStr(authData.token || '', finalVariables),
         secret: resolveStr(authData.tokenSecret || '', finalVariables),
@@ -289,7 +289,7 @@ function executeScriptSafely(
         json: () => {
           try {
             return typeof contextData.response === "string" ? JSON.parse(contextData.response) : contextData.response;
-          } catch(e) {
+          } catch (e) {
             return null;
           }
         },
@@ -377,7 +377,7 @@ export async function sendRequest(req: {
     if (typeof axiosData === 'string') {
       try {
         axiosData = JSON.parse(axiosData);
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -402,23 +402,11 @@ export async function sendRequest(req: {
 
     console.log(res.data);
 
-    let plainHeaders = {};
-    try {
-      plainHeaders = JSON.parse(JSON.stringify(res.headers));
-    } catch(e) {}
-
-    let plainData = res.data;
-    if (plainData !== undefined) {
-      try {
-        plainData = JSON.parse(JSON.stringify(plainData));
-      } catch(e) {}
-    }
-
     return {
       status: res.status,
       statusText: res.statusText,
-      headers: plainHeaders,
-      data: plainData,
+      headers: Object.fromEntries(Object.entries(res.headers)),
+      data: res.data,
       duration: Math.round(duration),
       size,
     };
@@ -476,7 +464,7 @@ export async function run(requestId: string, environmentId?: string, localVariab
     // Merge by priority: Local > Collection > Environment > Global
     // We reverse the order so higher priority overrides lower priority.
     const mergedVarsMap = new Map<string, any>();
-    
+
     globalVars.forEach(v => mergedVarsMap.set(v.key, v));
     envVars.forEach(v => mergedVarsMap.set(v.key, v));
     collectionVars.forEach(v => mergedVarsMap.set(v.key, v));
@@ -492,7 +480,7 @@ export async function run(requestId: string, environmentId?: string, localVariab
       environmentVariables: envVarsRecord,
       localVariables: localVarsRecord,
     });
-    
+
     updateVariablesMap(mergedVarsMap, preRequestResult.environmentMutations);
     updateVariablesMap(mergedVarsMap, preRequestResult.localMutations);
 
@@ -525,7 +513,7 @@ export async function run(requestId: string, environmentId?: string, localVariab
         if (Array.isArray(dbEnv.values)) {
           currentValues = [...dbEnv.values];
         }
-        
+
         for (const [key, val] of Object.entries(finalEnvMutations)) {
           const idx = currentValues.findIndex((v: any) => v.key === key);
           if (idx >= 0) {
@@ -661,7 +649,7 @@ export async function runDirect(requestData: {
       environmentVariables: envVarsRecord,
       localVariables: localVarsRecord,
     });
-    
+
     updateVariablesMap(mergedVarsMap, preRequestResult.environmentMutations);
     updateVariablesMap(mergedVarsMap, preRequestResult.localMutations);
 
@@ -695,7 +683,7 @@ export async function runDirect(requestData: {
         if (Array.isArray(dbEnv.values)) {
           currentValues = [...dbEnv.values];
         }
-        
+
         for (const [key, val] of Object.entries(finalEnvMutations)) {
           const idx = currentValues.findIndex((v: any) => v.key === key);
           if (idx >= 0) {
@@ -761,7 +749,7 @@ export async function runDirect(requestData: {
           }
         });
       }
-    } catch(e) {}
+    } catch (e) { }
 
     return {
       success: false,
@@ -818,7 +806,7 @@ export async function prepareBrowserRequest(requestData: any) {
       environmentVariables: envVarsRecord,
       localVariables: localVarsRecord,
     });
-    
+
     updateVariablesMap(mergedVarsMap, preRequestResult.environmentMutations);
     updateVariablesMap(mergedVarsMap, preRequestResult.localMutations);
 
@@ -863,7 +851,7 @@ export async function saveBrowserResponse(requestData: any, context: any, result
         if (Array.isArray(dbEnv.values)) {
           currentValues = [...dbEnv.values];
         }
-        
+
         for (const [key, val] of Object.entries(finalEnvMutations)) {
           const idx = currentValues.findIndex((v: any) => v.key === key);
           if (idx >= 0) {
@@ -927,7 +915,7 @@ export async function saveBrowserResponse(requestData: any, context: any, result
           }
         });
       }
-    } catch(e) {}
+    } catch (e) { }
 
     return {
       success: false,

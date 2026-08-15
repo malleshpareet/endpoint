@@ -86,21 +86,18 @@ export function useRunDirectRequest() {
 export function useRunBrowserRequest() {
   const { setResponseViewerData, activeTabId } = useRequestPlaygroundStore();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (requestData: any) => {
       const prep = await prepareBrowserRequest(requestData);
-      if (!prep.success) {
-        return { success: false, error: prep.error };
+      if (!prep.success || !prep.requestConfig) {
+        return { success: false, error: prep.error || "Failed to prepare request config" };
       }
-      
+
       const { requestConfig, context } = prep;
-      if (!requestConfig) {
-        return { success: false, error: 'Request configuration is missing' };
-      }
       let resultData: any = null;
       const start = performance.now();
-      
+
       let axiosData: any = requestConfig.body;
       const axiosHeaders: Record<string, string> = { ...(requestConfig.headers || {}) };
       const ct = requestConfig.bodyContentType || '';
@@ -145,27 +142,27 @@ export function useRunBrowserRequest() {
         if (typeof axiosData === 'string') {
           try {
             axiosData = JSON.parse(axiosData);
-          } catch(e) {}
+          } catch (e) { }
         }
       }
 
       try {
         const res = await axios({
-           method: requestConfig.method,
-           url: requestConfig.url,
-           headers: axiosHeaders,
-           params: requestConfig.params,
-           data: axiosData,
-           validateStatus: () => true
+          method: requestConfig.method,
+          url: requestConfig.url,
+          headers: axiosHeaders,
+          params: requestConfig.params,
+          data: axiosData,
+          validateStatus: () => true
         });
         const end = performance.now();
         const duration = end - start;
         const size = res.headers && res.headers["content-length"] ? parseInt(String(res.headers["content-length"])) : new TextEncoder().encode(JSON.stringify(res.data)).length;
-        
+
         resultData = {
           status: res.status,
           statusText: res.statusText,
-          headers: (res.headers as any)?.toJSON ? (res.headers as any).toJSON() : res.headers,
+          headers: Object.fromEntries(Object.entries(res.headers || {})),
           data: res.data,
           duration: Math.round(duration),
           size,
@@ -180,7 +177,7 @@ export function useRunBrowserRequest() {
           resolvedUrl: requestConfig?.url
         };
       }
-      
+
       const finalRes = await saveBrowserResponse(requestData, context, resultData);
       return finalRes;
     },
