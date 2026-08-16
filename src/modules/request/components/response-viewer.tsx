@@ -41,6 +41,7 @@ interface Result {
   duration?: number;
   size?: number;
   data?: any;
+  headers?: HeadersMap;
 }
 
 export interface ResponseData {
@@ -137,6 +138,27 @@ const ResponseViewer = ({ responseData }: Props) => {
 
   const rawBody = responseData.requestRun?.body ?? responseData.result?.data;
   const sanitizedRawBody = typeof rawBody === 'string' ? sanitizeString(rawBody) : JSON.stringify(sanitizeObject(rawBody ?? {}));
+
+  // Determine Content-Type to prevent Monaco from rendering binary files
+  let responseContentType = 'text/plain';
+  if (responseData?.requestRun?.headers) {
+    const headers = responseData.requestRun.headers as Record<string, string>;
+    const ctKey = Object.keys(headers).find(k => k.toLowerCase() === 'content-type');
+    if (ctKey) responseContentType = headers[ctKey]?.toLowerCase();
+  } else if (responseData?.result?.headers) {
+    const headers = responseData.result.headers as Record<string, string>;
+    const ctKey = Object.keys(headers).find(k => k.toLowerCase() === 'content-type');
+    if (ctKey) responseContentType = headers[ctKey]?.toLowerCase();
+  }
+
+  const isBinaryData = responseContentType.includes('image/') || 
+                       responseContentType.includes('video/') || 
+                       responseContentType.includes('audio/') || 
+                       responseContentType.includes('application/pdf') || 
+                       responseContentType.includes('application/octet-stream') ||
+                       responseContentType.includes('application/zip');
+
+  const isTooLarge = formattedJsonString.length > 5000000 || sanitizedRawBody.length > 5000000; // 5MB limit
 
   return (
     <div className="w-full bg-zinc-950 text-white p-6">
@@ -245,33 +267,47 @@ const ResponseViewer = ({ responseData }: Props) => {
                     </Button>
                   </div>
                   <div className="h-96">
-                    <Editor
-                      height="100%"
-                      defaultLanguage="json"
-                      value={formattedJsonString}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        fontSize: 14,
-                        wordWrap: 'on',
-                        fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                        lineNumbers: 'on',
-                        glyphMargin: false,
-                        folding: true,
-                        lineDecorationsWidth: 0,
-                        lineNumbersMinChars: 3,
-                        renderLineHighlight: 'none',
-                        scrollbar: {
-                          vertical: 'auto',
-                          horizontal: 'auto',
-                          verticalScrollbarSize: 8,
-                          horizontalScrollbarSize: 8,
-                          alwaysConsumeMouseWheel: false,
-                        },
-                      }}
-                      theme="vs-dark"
-                    />
+                    {isBinaryData ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                        <HardDrive className="w-12 h-12 mb-4 opacity-50" />
+                        <p>Response is binary data (Content-Type: {responseContentType})</p>
+                        <p className="text-sm mt-2">Please use the Download button to save the file.</p>
+                      </div>
+                    ) : isTooLarge ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                        <FileText className="w-12 h-12 mb-4 opacity-50" />
+                        <p>Response is too large to safely render in the editor.</p>
+                        <p className="text-sm mt-2">Please use the Download button to save the file.</p>
+                      </div>
+                    ) : (
+                      <Editor
+                        height="100%"
+                        defaultLanguage="json"
+                        value={formattedJsonString || ""}
+                        options={{
+                          readOnly: true,
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          fontSize: 14,
+                          wordWrap: 'on',
+                          fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                          lineNumbers: 'on',
+                          glyphMargin: false,
+                          folding: true,
+                          lineDecorationsWidth: 0,
+                          lineNumbersMinChars: 3,
+                          renderLineHighlight: 'none',
+                          scrollbar: {
+                            vertical: 'auto',
+                            horizontal: 'auto',
+                            verticalScrollbarSize: 8,
+                            horizontalScrollbarSize: 8,
+                            alwaysConsumeMouseWheel: false,
+                          },
+                        }}
+                        theme="vs-dark"
+                      />
+                    )}
                   </div>
                 </div>
               </TabsContent>
@@ -289,33 +325,47 @@ const ResponseViewer = ({ responseData }: Props) => {
                     </Button>
                   </div>
                   <div className="h-96">
-                    <Editor
-                      height="100%"
-                      defaultLanguage="text"
-                      value={sanitizedRawBody}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        fontSize: 14,
-                        fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                        wordWrap: 'on',
-                        lineNumbers: 'on',
-                        glyphMargin: false,
-                        folding: true,
-                        lineDecorationsWidth: 0,
-                        lineNumbersMinChars: 3,
-                        renderLineHighlight: 'none',
-                        scrollbar: {
-                          vertical: 'auto',
-                          horizontal: 'auto',
-                          verticalScrollbarSize: 8,
-                          horizontalScrollbarSize: 8,
-                          alwaysConsumeMouseWheel: false,
-                        },
-                      }}
-                      theme="vs-dark"
-                    />
+                    {isBinaryData ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                        <HardDrive className="w-12 h-12 mb-4 opacity-50" />
+                        <p>Response is binary data (Content-Type: {responseContentType})</p>
+                        <p className="text-sm mt-2">Please use the Download button to save the file.</p>
+                      </div>
+                    ) : isTooLarge ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                        <FileText className="w-12 h-12 mb-4 opacity-50" />
+                        <p>Response is too large to safely render in the editor.</p>
+                        <p className="text-sm mt-2">Please use the Download button to save the file.</p>
+                      </div>
+                    ) : (
+                      <Editor
+                        height="100%"
+                        defaultLanguage="text"
+                        value={sanitizedRawBody || ""}
+                        options={{
+                          readOnly: true,
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          fontSize: 14,
+                          fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                          wordWrap: 'on',
+                          lineNumbers: 'on',
+                          glyphMargin: false,
+                          folding: true,
+                          lineDecorationsWidth: 0,
+                          lineNumbersMinChars: 3,
+                          renderLineHighlight: 'none',
+                          scrollbar: {
+                            vertical: 'auto',
+                            horizontal: 'auto',
+                            verticalScrollbarSize: 8,
+                            horizontalScrollbarSize: 8,
+                            alwaysConsumeMouseWheel: false,
+                          },
+                        }}
+                        theme="vs-dark"
+                      />
+                    )}
                   </div>
 
                 </div>
