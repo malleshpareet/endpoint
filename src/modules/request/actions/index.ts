@@ -343,6 +343,7 @@ export async function sendRequest(req: {
     const formData = new FormData();
     for (const item of req.body) {
       if (!item.key) continue;
+      const key = item.key.trim();
       if (item.type === 'file' && item.value) {
         // value is a data-URL: "data:<mime>;base64,<data>"
         try {
@@ -351,18 +352,20 @@ export async function sendRequest(req: {
           const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
           const binary = Buffer.from(base64, 'base64');
           const blob = new Blob([binary], { type: mime });
-          formData.append(item.key, blob, item.fileName || item.key);
+          formData.append(key, blob, item.fileName || key);
         } catch (e) {
-          console.error('Failed to decode file for key:', item.key, e);
+          console.error('Failed to decode file for key:', key, e);
+          formData.append(key, item.value ?? '');
         }
       } else {
-        formData.append(item.key, item.value ?? '');
+        formData.append(key, item.value ?? '');
       }
     }
     axiosData = formData;
     // Let Axios/FormData set the Content-Type with the correct boundary
-    delete axiosHeaders['Content-Type'];
-    delete axiosHeaders['content-type'];
+    Object.keys(axiosHeaders).forEach(k => {
+      if (k.toLowerCase() === 'content-type') delete axiosHeaders[k];
+    });
   } else if (ct === 'application/x-www-form-urlencoded' && Array.isArray(req.body)) {
     const params = new URLSearchParams();
     for (const item of req.body) {
