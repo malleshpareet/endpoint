@@ -47,18 +47,26 @@ export const acceptWorkspaceInvite = async (token: string) => {
 
   if (!invite.expiresAt || invite.expiresAt < new Date()) throw new Error("Invite expired");
 
-  await db.workspaceMember.create({
-    data: {
+  const existingMember = await db.workspaceMember.findFirst({
+    where: {
       userId: user.id,
       workspaceId: invite.workspaceId,
-      role: MEMBER_ROLE.VIEWER,
-    },
+    }
   });
+
+  if (!existingMember) {
+    await db.workspaceMember.create({
+      data: {
+        userId: user.id,
+        workspaceId: invite.workspaceId,
+        role: MEMBER_ROLE.VIEWER,
+      },
+    });
+  }
 
   await db.workspaceInvite.delete({
     where: { id: invite.id },
   });
-
   
   return { success: true };
 };
@@ -81,6 +89,36 @@ export const inviteUserByEmail = async (workspaceId: string, email: string) => {
     const workspace = await db.workspace.findUnique({ where: { id: workspaceId } })
     if (!workspace) throw new Error("Workspace not found")
     if (workspace.name === "Personal Workspace") throw new Error("Cannot invite to Personal Workspace")
+
+    // Check if user is already a member
+    const targetUser = await db.user.findUnique({ where: { email } });
+    if (targetUser) {
+      const existingMember = await db.workspaceMember.findFirst({
+        where: {
+          userId: targetUser.id,
+          workspaceId: workspaceId,
+        }
+      });
+      if (existingMember) {
+        throw new Error("User is already a member of this workspace");
+      }
+    }
+
+    // Check if there's already a pending invite
+    const existingInvite = await db.workspaceInvite.findFirst({
+      where: {
+        workspaceId,
+        email,
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: new Date() } }
+        ]
+      }
+    });
+    
+    if (existingInvite) {
+      throw new Error("User already has a pending invite to this workspace");
+    }
 
     const invite = await db.workspaceInvite.create({
       data: {
