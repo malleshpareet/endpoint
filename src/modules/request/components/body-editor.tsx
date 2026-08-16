@@ -437,8 +437,8 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
           {/* Footer */}
           <div className="bg-zinc-900 border-t border-zinc-700 px-4 py-3 flex items-center justify-between">
             <div className="text-xs text-zinc-400">
-              Lines: {bodyValue?.split('\n').length || 0} |
-              Characters: {bodyValue?.length || 0}
+              Lines: {typeof bodyValue === 'string' ? bodyValue.split('\n').length : 0} |
+              Characters: {typeof bodyValue === 'string' ? bodyValue.length : 0}
             </div>
           </div>
         </div>
