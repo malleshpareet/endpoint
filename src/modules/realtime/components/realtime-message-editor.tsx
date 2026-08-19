@@ -6,15 +6,16 @@ import Editor from '@monaco-editor/react'
 import { toast } from 'sonner'
 import RealtimeClientServerLogsTable from './realtime-client-server-logs-table'
 
-const RealtimeMessageEditor = () => {
+const RealtimeMessageEditor = ({ sessionId }: { sessionId: string }) => {
   const { 
     send, 
-    status,
-    isConnected, 
-    draftMessage, 
-    setDraftMessage, 
-    messages 
+    getConnection,
+    setDraftMessage
   } = useWsStore()
+  
+  const connection = getConnection(sessionId)
+  const status = connection?.status || 'disconnected'
+  const draftMessage = connection?.draftMessage || ''
   
   const [isSending, setIsSending] = useState(false)
   const editorRef = useRef<any>(null)
@@ -23,7 +24,7 @@ const RealtimeMessageEditor = () => {
   useEffect(() => {
     if (!draftMessage) {
       const initial = '{\n  "type": "message",\n  "content": "Hello WebSocket!",\n  "timestamp": "' + new Date().toISOString() + '"\n}'
-      setDraftMessage(initial)
+      setDraftMessage(sessionId, initial)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -47,7 +48,7 @@ const RealtimeMessageEditor = () => {
         messageToSend = draftMessage
       }
 
-      const success = send(messageToSend)
+      const success = send(sessionId, messageToSend)
       if (success) {
         toast.success('Message sent')
       } else {
@@ -58,7 +59,7 @@ const RealtimeMessageEditor = () => {
     } finally {
       setIsSending(false)
     }
-  }, [draftMessage, send, status])
+  }, [sessionId, draftMessage, send, status])
 
   const handleEditorDidMount = useCallback((editor: any, monaco: any) => {
     editorRef.current = editor
@@ -92,12 +93,12 @@ const RealtimeMessageEditor = () => {
   const handleFormatJSON = useCallback(() => {
     try {
       const formatted = JSON.stringify(JSON.parse(draftMessage), null, 2)
-      setDraftMessage(formatted)
+      setDraftMessage(sessionId, formatted)
       editorRef.current?.setValue(formatted)
     } catch {
       toast.error('Invalid JSON')
     }
-  }, [draftMessage, setDraftMessage])
+  }, [sessionId, draftMessage, setDraftMessage])
 
   const handleCopyMessage = useCallback(() => {
     navigator.clipboard.writeText(draftMessage)
@@ -107,10 +108,10 @@ const RealtimeMessageEditor = () => {
 
   const handleClearMessage = useCallback(() => {
     const empty = '{\n  \n}'
-    setDraftMessage(empty)
+    setDraftMessage(sessionId, empty)
     editorRef.current?.setValue(empty)
     editorRef.current?.focus()
-  }, [setDraftMessage])
+  }, [sessionId, setDraftMessage])
 
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
@@ -156,7 +157,7 @@ const RealtimeMessageEditor = () => {
           language="json"
           theme="vs-dark"
           value={draftMessage}
-          onChange={(val) => setDraftMessage(val || '')}
+          onChange={(val) => setDraftMessage(sessionId, val || '')}
           onMount={handleEditorDidMount}
           options={{
             fontSize: 13,
@@ -201,7 +202,7 @@ const RealtimeMessageEditor = () => {
 
       {/* Logs panel */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <RealtimeClientServerLogsTable />
+        <RealtimeClientServerLogsTable sessionId={sessionId} />
       </div>
     </div>
   )

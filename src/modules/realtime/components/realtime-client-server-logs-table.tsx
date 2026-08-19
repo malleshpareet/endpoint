@@ -3,8 +3,10 @@ import { useWsStore } from '../hooks/useWs'
 import { Trash2, Copy, ArrowUpRight, ArrowDownLeft, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-const RealtimeClientServerLogsTable = () => {
-  const { messages, clearMessages } = useWsStore()
+const RealtimeClientServerLogsTable = ({ sessionId }: { sessionId: string }) => {
+  const { getConnection, clearMessages } = useWsStore()
+  const connection = getConnection(sessionId)
+  const messages = connection?.messages || []
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -15,13 +17,16 @@ const RealtimeClientServerLogsTable = () => {
     }
   }, [messages.length, selectedIndex])
 
-  const formatTimestamp = (ts: Date) =>
-    new Intl.DateTimeFormat('en-US', {
+  const formatTimestamp = (ts: Date | string | number) => {
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return 'Invalid time';
+    return new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
       fractionalSecondDigits: 3,
-    }).format(ts)
+    }).format(d);
+  }
 
   const formatData = (data: any) => {
     if (typeof data === 'string') {
@@ -59,7 +64,7 @@ const RealtimeClientServerLogsTable = () => {
             </button>
           )}
           <button
-            onClick={clearMessages}
+            onClick={() => clearMessages(sessionId)}
             disabled={messages.length === 0}
             title="Clear all"
             className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30"

@@ -110,6 +110,7 @@ model Workspace {
   collections Collection[]
 
   environments Environment[]
+  webSocketRequests WebSocketRequest[]
   globalVariables Json? @default("[]")
 
   createdAt        DateTime          @default(now())
@@ -226,6 +227,21 @@ model RequestRun {
   resolvedUrl String? // the actual URL executed after variable resolution
 
   createdAt DateTime @default(now())
+}
+
+model WebSocketRequest {
+  id         String      @id @default(cuid())
+  name       String
+  url        String
+  headers    Json?       // Optional custom headers
+  body       Json?       // Saved default message body (JSON or text)
+  format     String      @default("JSON") // "JSON" or "Text"
+
+  workspaceId String
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model SystemSettings {

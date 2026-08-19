@@ -4,31 +4,34 @@ import { PlugZap, Plug, AlertCircle, Link2, Link2Off } from 'lucide-react'
 import React, { useState, useCallback, useEffect } from 'react'
 import { useWsStore } from '../hooks/useWs'
 
-const RealtimeConnectionBar = () => {
+const RealtimeConnectionBar = ({ sessionId, defaultUrl, onSave }: { sessionId: string, defaultUrl?: string, onSave?: (url: string) => void }) => {
   const { 
-    status, 
-    isConnected, 
-    error, 
-    url: connectedUrl, 
-    reconnectAttempts, 
-    maxReconnectAttempts,
+    getConnection,
     connect,
     disconnect
   } = useWsStore()
   
-  const [url, setUrl] = useState(connectedUrl || '')
+  const connection = getConnection(sessionId)
+  const status = connection?.status || 'disconnected'
+  const isConnected = status === 'connected'
+  const error = connection?.error
+  const connectedUrl = connection?.url
+  const reconnectAttempts = connection?.reconnectAttempts || 0
+  const maxReconnectAttempts = connection?.maxReconnectAttempts || 5
+  
+  const [url, setUrl] = useState(defaultUrl || connectedUrl || '')
 
   useEffect(() => {
-    setUrl(connectedUrl || '')
-  }, [connectedUrl])
+    setUrl(defaultUrl || connectedUrl || '')
+  }, [connectedUrl, defaultUrl])
 
   const onConnect = useCallback(() => {
     if (!url.trim()) return
 
     if (isConnected) {
-      disconnect()
+      disconnect(sessionId)
     } else {
-      connect(url, {
+      connect(sessionId, url, {
         onOpen: () => console.log('Connected to:', url),
         onClose: () => console.log('Disconnected'),
         onError: (e) => console.error('WebSocket error:', e),
@@ -37,7 +40,7 @@ const RealtimeConnectionBar = () => {
         reconnectDelay: 3000
       })
     }
-  }, [url, isConnected, connect, disconnect])
+  }, [sessionId, url, isConnected, connect, disconnect])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') onConnect()
