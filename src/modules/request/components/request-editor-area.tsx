@@ -17,10 +17,11 @@ interface Props {
 const RequestEditorArea = ({ tab, updateTab }: Props) => {
 
 
-  const parseKeyValueData = (jsonString?: string) => {
-    if (!jsonString) return [];
+  const parseKeyValueData = (data?: string | any[]) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
     try {
-      return JSON.parse(jsonString);
+      return JSON.parse(data);
     } catch {
       return [];
     }
