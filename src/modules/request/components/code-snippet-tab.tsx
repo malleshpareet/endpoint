@@ -14,8 +14,11 @@ import {
     generateDartHttpSnippet, RequestDetails 
 } from '@/modules/request/utils/snippet-generators';
 import { sanitizeString, sanitizeObject, sanitizeHeaders } from '@/lib/sanitize';
+import { Hint } from '@/components/ui/hint';
 
 const CodeSnippetTab = () => {
+    const [isHelpOpen, setIsHelpOpen] = React.useState(false);
+    const [isDocsOpen, setIsDocsOpen] = React.useState(false);
     const { activeTabId, tabs } = useRequestPlaygroundStore();
     const activeTab = tabs.find(t => t.id === activeTabId);
     
@@ -193,10 +196,147 @@ const CodeSnippetTab = () => {
                     <span className="text-sm font-medium">Code snippet</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <HelpCircle className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
-                    <ExternalLink className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
+                    <Hint label="Code Snippets Help" side="bottom">
+                        <button onClick={() => setIsHelpOpen(true)} className="flex items-center justify-center">
+                            <HelpCircle className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
+                        </button>
+                    </Hint>
+                    <Hint label="View full documentation" side="bottom">
+                        <button onClick={() => setIsDocsOpen(true)} className="flex items-center justify-center">
+                            <ExternalLink className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
+                        </button>
+                    </Hint>
                 </div>
             </div>
+
+            {/* Help Modal */}
+            {isHelpOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    onClick={() => setIsHelpOpen(false)}
+                >
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div
+                        className="relative w-full max-w-md mx-4 rounded-2xl border p-6"
+                        style={{
+                            background: "rgba(15,15,17,0.98)",
+                            borderColor: "rgba(255,255,255,0.08)",
+                            boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 48px rgba(0,0,0,0.7)",
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,0.15)" }}>
+                                    <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
+                                </div>
+                                <h3 className="text-[14px] font-semibold text-white/90">Code Snippets — Help</h3>
+                            </div>
+                            <button
+                                onClick={() => setIsHelpOpen(false)}
+                                className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.06] transition-all text-lg leading-none"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="space-y-4 text-[13px] text-zinc-400 leading-relaxed">
+                            <div className="p-3 rounded-lg border" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                                <p className="text-zinc-300 font-medium mb-1">💻 Generating Code</p>
+                                <p>Select your preferred programming language from the dropdown to automatically generate integration code for this specific API request.</p>
+                            </div>
+                            <div className="p-3 rounded-lg border" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                                <p className="text-zinc-300 font-medium mb-1">🔄 Dynamic Variables</p>
+                                <p>The generated code automatically injects your active environment variables, meaning you can copy and paste the code directly into your app.</p>
+                            </div>
+                        </div>
+                        <div className="mt-5 pt-4 border-t flex justify-end" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                            <button
+                                onClick={() => setIsHelpOpen(false)}
+                                className="px-4 py-1.5 rounded-lg text-[12.5px] font-medium text-white/70 hover:text-white transition-colors"
+                                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                            >
+                                Got it
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Docs Modal */}
+            {isDocsOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    onClick={() => setIsDocsOpen(false)}
+                >
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div
+                        className="relative w-full max-w-md mx-4 rounded-2xl border p-6"
+                        style={{
+                            background: "rgba(15,15,17,0.98)",
+                            borderColor: "rgba(255,255,255,0.08)",
+                            boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 48px rgba(0,0,0,0.7)",
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,0.15)" }}>
+                                    <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                                </div>
+                                <h3 className="text-[14px] font-semibold text-white/90">API Documentation</h3>
+                            </div>
+                            <button
+                                onClick={() => setIsDocsOpen(false)}
+                                className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.06] transition-all text-lg leading-none"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="py-8 flex flex-col items-center justify-center text-center">
+                            {activeTab?.collectionId ? (
+                                <>
+                                    <div className="w-12 h-12 bg-white/[0.02] rounded-full flex items-center justify-center mb-4 text-indigo-400">
+                                        <ExternalLink className="w-6 h-6" />
+                                    </div>
+                                    <p className="text-sm font-medium text-zinc-300 mb-2">View Documentation</p>
+                                    <p className="text-xs text-zinc-500 max-w-[280px] mb-6">
+                                        Open the automatically generated documentation page for this collection.
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            window.open(`/docs/${activeTab.collectionId}`, '_blank');
+                                            setIsDocsOpen(false);
+                                        }}
+                                        className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-md flex items-center gap-2"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        Open Documentation
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="w-12 h-12 bg-white/[0.02] rounded-full flex items-center justify-center mb-4">
+                                        <ExternalLink className="w-5 h-5 text-zinc-500" />
+                                    </div>
+                                    <p className="text-sm font-medium text-zinc-300 mb-1">Not Saved to Collection</p>
+                                    <p className="text-xs text-zinc-500 max-w-[250px]">
+                                        Please save this request to a collection to view its API documentation.
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                        <div className="mt-5 pt-4 border-t flex justify-end" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                            <button
+                                onClick={() => setIsDocsOpen(false)}
+                                className="px-4 py-1.5 rounded-lg text-[12.5px] font-medium text-white/70 hover:text-white transition-colors"
+                                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex-1 flex flex-col bg-[#1e1e1e]">
                 <div className="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800/50">

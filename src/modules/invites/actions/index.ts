@@ -7,6 +7,7 @@ import { MEMBER_ROLE } from "@prisma/client"
 import { randomBytes } from "crypto"
 import { verifyWorkspaceRole } from "@/modules/workspace/actions/permissions"
 import { pusherServer } from "@/lib/pusher"
+import { logWorkspaceActivity } from "@/modules/workspace/actions/activity"
 
 export const generateWorkspaceInvite = async (workspaceId: string) => {
   try {
@@ -28,6 +29,13 @@ export const generateWorkspaceInvite = async (workspaceId: string) => {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), 
       }
     })
+
+    await logWorkspaceActivity(
+      workspaceId,
+      "GENERATED_INVITE_LINK",
+      invite.id,
+      "an invite link"
+    );
 
     return { success: true, link: `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invite.token}` }
   } catch (error: any) {
@@ -62,6 +70,13 @@ export const acceptWorkspaceInvite = async (token: string) => {
         role: MEMBER_ROLE.VIEWER,
       },
     });
+
+    await logWorkspaceActivity(
+      invite.workspaceId,
+      "ACCEPTED_INVITE",
+      user.id,
+      user.name || user.email || "a user"
+    );
   }
 
   await db.workspaceInvite.delete({

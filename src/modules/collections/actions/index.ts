@@ -3,6 +3,7 @@
 import db from "@/lib/db";
 import { verifyWorkspaceRole } from "@/modules/workspace/actions/permissions";
 import { ParsedCollection } from "@/lib/httply-parser";
+import { logWorkspaceActivity } from "@/modules/workspace/actions/activity";
 
 export const createCollection = async (workspaceId: string, name: string) => {
   await verifyWorkspaceRole(workspaceId, ['ADMIN', 'EDITOR']);
@@ -17,6 +18,13 @@ export const createCollection = async (workspaceId: string, name: string) => {
       },
     },
   });
+
+  await logWorkspaceActivity(
+    workspaceId,
+    "CREATED_COLLECTION",
+    collection.id,
+    collection.name
+  );
 
   return collection;
 };
@@ -43,6 +51,14 @@ export const deleteCollection = async (collectionId: string) => {
         id: collectionId,
       },
     });
+
+    await logWorkspaceActivity(
+      collection.workspaceId,
+      "DELETED_COLLECTION",
+      collectionId,
+      collection.name
+    );
+
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

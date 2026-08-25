@@ -2,7 +2,10 @@
 
 import db from "@/lib/db";
 import { currentUser } from "@/modules/authentication/actions";
-import { MEMBER_ROLE } from "@prisma/client";export async function getWorkspaceMembers(workspaceId: string) {
+import { MEMBER_ROLE } from "@prisma/client";
+import { logWorkspaceActivity } from "./activity";
+
+export async function getWorkspaceMembers(workspaceId: string) {
   try {
     const members = await db.workspaceMember.findMany({
       where: {
@@ -66,8 +69,19 @@ export async function updateWorkspaceMemberRole(workspaceId: string, memberId: s
       },
       data: {
         role: newRole
+      },
+      include: {
+        user: true
       }
     });
+
+    await logWorkspaceActivity(
+      workspaceId,
+      "UPDATED_MEMBER_ROLE",
+      memberId,
+      updatedMember.user.name,
+      { newRole }
+    );
 
     return { success: true, member: updatedMember };
   } catch (error: any) {
@@ -98,12 +112,22 @@ export async function removeWorkspaceMember(workspaceId: string, memberId: strin
       throw new Error("You cannot remove yourself.");
     }
 
-    await db.workspaceMember.delete({
+    const deletedMember = await db.workspaceMember.delete({
       where: {
         id: memberId,
         workspaceId: workspaceId
+      },
+      include: {
+        user: true
       }
     });
+
+    await logWorkspaceActivity(
+      workspaceId,
+      "REMOVED_MEMBER",
+      memberId,
+      deletedMember.user.name
+    );
 
     return { success: true };
   } catch (error: any) {
