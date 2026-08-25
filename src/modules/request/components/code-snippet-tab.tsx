@@ -55,7 +55,10 @@ const CodeSnippetTab = () => {
     const getRequestDetails = (): RequestDetails => {
         let headers: { key: string; value: string }[] = [];
         let params: { key: string; value: string }[] = [];
-        let bodyContent = resolveVariable(activeTab.body || '');
+        const rawBody = typeof activeTab.body === 'object' && activeTab.body !== null
+            ? JSON.stringify(activeTab.body, null, 2)
+            : (activeTab.body as string || '');
+        let bodyContent = resolveVariable(rawBody);
         let resolvedUrl = resolveVariable(activeTab.url || '');
 
         try {
