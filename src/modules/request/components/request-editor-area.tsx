@@ -15,8 +15,13 @@ interface Props {
 }
 
 const RequestEditorArea = ({ tab, updateTab }: Props) => {
+  const [activeSubTab, setActiveSubTab] = React.useState<string>(
+    ["POST", "PUT", "PATCH"].includes(tab.method || "") ? "body" : "parameters"
+  );
 
-
+  React.useEffect(() => {
+    setActiveSubTab(["POST", "PUT", "PATCH"].includes(tab.method || "") ? "body" : "parameters");
+  }, [tab.id]);
   const parseKeyValueData = (data?: string | any[]) => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
@@ -41,9 +46,25 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
 
   const getBodyData = () => {
     const contentType = (tab.bodyContentType as any) || 'application/json';
+    let formattedBody = tab.body || '';
+
+    if (contentType === 'application/json' || contentType === 'JSON') {
+      if (typeof formattedBody === 'object' && formattedBody !== null) {
+        formattedBody = JSON.stringify(formattedBody, null, 2);
+      } else if (typeof formattedBody === 'string' && formattedBody.trim()) {
+        try {
+          formattedBody = JSON.stringify(JSON.parse(formattedBody), null, 2);
+        } catch {
+          // Keep as is if it's not valid JSON yet
+        }
+      }
+    } else if (typeof formattedBody === 'object' && formattedBody !== null) {
+      formattedBody = JSON.stringify(formattedBody, null, 2);
+    }
+
     return {
       contentType,
-      body: tab.body || ''
+      body: formattedBody
     };
   };
 
@@ -73,7 +94,8 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
 
   return (
     <Tabs
-      defaultValue="parameters"
+      value={activeSubTab}
+      onValueChange={setActiveSubTab}
       className="bg-[#0d0d0f] rounded-none border-0 w-full flex flex-col h-full overflow-hidden"
     >
       <TabsList className="border-b border-white/[0.06] bg-[#111113] px-2 flex items-center gap-0.5 rounded-none h-auto w-full justify-start p-0">
