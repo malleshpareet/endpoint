@@ -291,11 +291,14 @@ function RequestSection({ request, isLast }: { request: Request; isLast: boolean
     : [];
 
   // Safely parse body if JSON
-  let bodyContent = request.body as string;
+  let bodyContent = typeof request.body === 'object' && request.body !== null 
+    ? JSON.stringify(request.body, null, 2) 
+    : (request.body as string) || "";
   let parsedBody: any = null;
-  if (request.bodyContentType === "JSON") {
+  
+  if (typeof request.body === 'string' && request.bodyContentType === "JSON") {
     try {
-      parsedBody = JSON.parse(request.body as string);
+      parsedBody = JSON.parse(request.body);
       bodyContent = JSON.stringify(parsedBody, null, 2);
     } catch {
       // ignore
@@ -362,7 +365,9 @@ function RequestSection({ request, isLast }: { request: Request; isLast: boolean
                   {queryParams.map((p, i) => (
                     <tr key={i}>
                       <td className="px-4 py-3 font-mono text-indigo-300">{p.key}</td>
-                      <td className="px-4 py-3 text-zinc-300">{p.value}</td>
+                      <td className="px-4 py-3 text-zinc-300">
+                        {typeof p.value === 'object' && p.value !== null ? JSON.stringify(p.value) : String(p.value)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -387,7 +392,9 @@ function RequestSection({ request, isLast }: { request: Request; isLast: boolean
                   {headers.map((h, i) => (
                     <tr key={i}>
                       <td className="px-4 py-3 font-mono text-indigo-300">{h.key}</td>
-                      <td className="px-4 py-3 text-zinc-300 break-all">{h.value}</td>
+                      <td className="px-4 py-3 text-zinc-300 break-all">
+                        {typeof h.value === 'object' && h.value !== null ? JSON.stringify(h.value) : String(h.value)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
